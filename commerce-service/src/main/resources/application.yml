@@ -1,0 +1,110 @@
+spring:
+  application:
+    name: commerce-service
+  main:
+    banner-mode: "off"
+  jackson:
+    time-zone: UTC
+    property-naming-strategy: LOWER_CAMEL_CASE
+    deserialization:
+      fail-on-unknown-properties: true
+  lifecycle:
+    timeout-per-shutdown-phase: ${SHUTDOWN_TIMEOUT:20s}
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER:fresveg_commerce}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT:5000}
+  liquibase:
+    change-log: classpath:database/commerce/db.changelog-commerce-master.yaml
+    contexts: service
+    default-schema: commerce
+    liquibase-schema: commerce
+    url: ${spring.datasource.url}
+    user: ${MIGRATION_DB_USER:fresveg_commerce_migrator}
+    password: ${MIGRATION_DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: commerce
+    hibernate:
+      ddl-auto: validate
+  sql:
+    init:
+      mode: never
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${SERVER_PORT:8084}
+  shutdown: graceful
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics
+      discovery:
+        enabled: false
+  endpoint:
+    health:
+      show-details: never
+      group:
+        readiness:
+          include: readinessState,db
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: ${OTEL_TRACES_SAMPLER_PROBABILITY:1.0}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+logging:
+  structured:
+    format:
+      console: ${LOG_FORMAT:ecs}
+
+commerce:
+  orders:
+    catalog-base-url: ${CATALOG_BASE_URL:}
+    inventory-token-file: ${INVENTORY_SERVICE_TOKEN_FILE:}
+    recovery-delay-ms: ${ORDER_RECOVERY_DELAY_MS:30000}
+  payments:
+    local:
+      declined-method-ids: ${LOCAL_PAYMENT_DECLINED_METHOD_IDS:}
+      refund-failure-attempt-ids: ${LOCAL_PAYMENT_REFUND_FAILURE_ATTEMPT_IDS:}
+  outbox:
+    publisher: ${OUTBOX_PUBLISHER:noop}
+    scheduler-enabled: ${OUTBOX_SCHEDULER_ENABLED:true}
+    poll-delay-ms: ${OUTBOX_POLL_DELAY_MS:5000}
+    initial-delay-ms: ${OUTBOX_INITIAL_DELAY_MS:5000}
+    batch-size: ${OUTBOX_BATCH_SIZE:25}
+    local:
+      fail-event-types: ${OUTBOX_LOCAL_FAIL_EVENT_TYPES:}
+    kafka:
+      topic: ${OUTBOX_KAFKA_TOPIC:fresveg.events.v1}
+      timeout-ms: ${OUTBOX_KAFKA_TIMEOUT_MS:5000}
+  checkout:
+    delivery-slots: ${CHECKOUT_DELIVERY_SLOTS:[]}
+    pricing-rules: ${CHECKOUT_PRICING_RULES:[]}
+  client:
+    connect-timeout-ms: ${OWNER_CONNECT_TIMEOUT_MS:2000}
+    request-timeout-ms: ${OWNER_REQUEST_TIMEOUT_MS:3000}
+    cooldown-ms: ${OWNER_COOLDOWN_MS:5000}
+    max-concurrent: ${OWNER_MAX_CONCURRENT:8}
+  account-base-url: ${ACCOUNT_BASE_URL}
+  supply-base-url: ${SUPPLY_BASE_URL}
+  security:
+    issuer-uri: ${OIDC_ISSUER_URI}
+    audience: ${OIDC_AUDIENCE}
+    jwk-set-uri: ${OIDC_JWK_SET_URI}
+springdoc:
+  override-with-generic-response: false
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:false}
+    version: OPENAPI_3_1
+  paths-to-match: /api/v1/carts,/api/v1/carts/**,/api/v1/checkout/preview,/api/v1/orders,/api/v1/orders/**,/api/v1/vendor/orders,/api/v1/vendor/orders/**

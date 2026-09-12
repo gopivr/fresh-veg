@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: supply-004-create-inventory
+      author: fresveg
+      logicalFilePath: database/supply/changelog/004-create-inventory.yaml
+      dbms: postgresql
+      comment: Create inventory, batches, immutable ledger and reservations with stock constraints and scoped grants.
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "1"
+            sql: SELECT CASE WHEN current_user = 'fresveg_supply_migrator' AND current_schema() = 'supply' THEN 1 ELSE 0 END
+      changes:
+        - sqlFile:
+            path: 004-create-inventory.sql
+            relativeToChangelogFile: true
+            splitStatements: true
+      rollback:
+        - sqlFile:
+            path: 004-rollback-empty-inventory.sql
+            relativeToChangelogFile: true
+            splitStatements: false

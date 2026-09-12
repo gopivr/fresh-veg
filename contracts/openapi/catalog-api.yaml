@@ -1,0 +1,1457 @@
+openapi: 3.1.0
+info:
+  title: FresVeg Catalog API
+  description: "Reusable master products, classification and metadata. Public reads\
+    \ expose ACTIVE products. Mutations require stored PLATFORM_ADMIN authority from\
+    \ Account."
+  version: 0.1.0
+servers:
+- url: /
+paths:
+  /api/v1/catalog/products/{productId}:
+    get:
+      tags:
+      - Catalog
+      summary: Read active product metadata; non-active products are visible only
+        to administrators
+      operationId: getProduct
+      parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseProductResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "403":
+          description: Stored platform administrator authority is required
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "503":
+          description: Account authorization is unavailable; writes fail closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "404":
+          description: Resource does not exist or is not publicly visible
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+    put:
+      tags:
+      - Catalog
+      summary: Replace product metadata and children using the current aggregate version
+      operationId: replaceProduct
+      parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseProductResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "403":
+          description: Stored platform administrator authority is required
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "503":
+          description: Account authorization is unavailable; writes fail closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "409":
+          description: "Duplicate code, invalid relation or stale aggregate version"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "404":
+          description: Resource does not exist or is not publicly visible
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Catalog
+      summary: Change product status using the current version; other partial edits
+        are not supported
+      operationId: patchProduct
+      parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchProductRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseProductResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "403":
+          description: Stored platform administrator authority is required
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "503":
+          description: Account authorization is unavailable; writes fail closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "409":
+          description: "Duplicate code, invalid relation or stale aggregate version"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "404":
+          description: Resource does not exist or is not publicly visible
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/catalog/products:
+    get:
+      tags:
+      - Catalog
+      summary: Browse active products; non-active status requires a stored platform
+        administrator role
+      operationId: listProducts
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: categoryId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: organic
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - DRAFT
+          - ACTIVE
+          - ARCHIVED
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+          default: name
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: cursor
+        in: query
+        description: Opaque nextCursor from the preceding page; preserve filters and
+          sort
+        required: false
+        schema:
+          type: string
+      - name: attributes
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponseProductSummary"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "403":
+          description: Stored platform administrator authority is required
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "503":
+          description: Account authorization is unavailable; writes fail closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "404":
+          description: Resource does not exist or is not publicly visible
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+    post:
+      tags:
+      - Catalog
+      summary: "Create a master product with variants, categories and images"
+      operationId: createProduct
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+        required: true
+      responses:
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "403":
+          description: Stored platform administrator authority is required
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "503":
+          description: Account authorization is unavailable; writes fail closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "409":
+          description: "Duplicate code, invalid relation or stale aggregate version"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "404":
+          description: Resource does not exist or is not publicly visible
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "201":
+          description: Resource created
+          headers:
+            Location:
+              description: Created resource path
+              schema:
+                type: string
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseProductResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/catalog/categories:
+    get:
+      tags:
+      - Catalog
+      summary: List categories with parent identifiers
+      operationId: listCategories
+      parameters:
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: cursor
+        in: query
+        description: Opaque nextCursor from the preceding page; preserve filters and
+          sort
+        required: false
+        schema:
+          type: string
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponseCategoryResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "403":
+          description: Stored platform administrator authority is required
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "503":
+          description: Account authorization is unavailable; writes fail closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+    post:
+      tags:
+      - Catalog
+      summary: Create a category beneath an existing optional parent
+      operationId: createCategory
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+        required: true
+      responses:
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "403":
+          description: Stored platform administrator authority is required
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "503":
+          description: Account authorization is unavailable; writes fail closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "409":
+          description: "Duplicate code, invalid relation or stale aggregate version"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "404":
+          description: Resource does not exist or is not publicly visible
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "201":
+          description: Resource created
+          headers:
+            Location:
+              description: Created resource path
+              schema:
+                type: string
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseCategoryResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/catalog/categories/{categoryId}/products:
+    get:
+      tags:
+      - Catalog
+      summary: Browse products directly assigned to a category
+      operationId: listCategoryProducts
+      parameters:
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: organic
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - DRAFT
+          - ACTIVE
+          - ARCHIVED
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+          default: name
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: cursor
+        in: query
+        description: Opaque nextCursor from the preceding page; preserve filters and
+          sort
+        required: false
+        schema:
+          type: string
+      - name: attributes
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponseProductSummary"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "403":
+          description: Stored platform administrator authority is required
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "503":
+          description: Account authorization is unavailable; writes fail closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+        "404":
+          description: Resource does not exist or is not publicly visible
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CatalogProblem"
+components:
+  schemas:
+    ImageRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        url:
+          type: string
+          maxLength: 2048
+          minLength: 0
+          pattern: "https://[^\\s]+"
+        altText:
+          type: string
+          maxLength: 240
+          minLength: 0
+      required:
+      - altText
+      - url
+    UpdateProductRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          minLength: 1
+          pattern: "[A-Z0-9][A-Z0-9_-]{0,63}"
+        name:
+          type: string
+          maxLength: 160
+          minLength: 0
+        description:
+          type:
+          - string
+          - "null"
+          maxLength: 4000
+          minLength: 0
+        organic:
+          type: boolean
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - ACTIVE
+          - ARCHIVED
+        attributes:
+          type: object
+          additionalProperties: {}
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 50
+          minItems: 0
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/VariantRequest"
+          maxItems: 50
+          minItems: 0
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImageRequest"
+          maxItems: 20
+          minItems: 0
+        version:
+          type: integer
+          format: int64
+      required:
+      - attributes
+      - categoryIds
+      - code
+      - images
+      - name
+      - organic
+      - status
+      - variants
+      - version
+    VariantRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          minLength: 1
+          pattern: "[A-Z0-9][A-Z0-9_-]{0,63}"
+        name:
+          type: string
+          maxLength: 160
+          minLength: 0
+        unitCode:
+          type: string
+          maxLength: 16
+          minLength: 0
+        quantity:
+          type: number
+          minimum: 0
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - ARCHIVED
+      required:
+      - code
+      - name
+      - quantity
+      - status
+      - unitCode
+    ApiResponseProductResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ProductResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    ImageResponse:
+      type: object
+      properties:
+        imageId:
+          type: string
+          format: uuid
+        url:
+          type: string
+        altText:
+          type: string
+        position:
+          type: integer
+          format: int32
+      required:
+      - altText
+      - imageId
+      - position
+      - url
+    Meta:
+      type: object
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+      - requestId
+      - timestamp
+    ProductResponse:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type:
+          - string
+          - "null"
+        organic:
+          type: boolean
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - ACTIVE
+          - ARCHIVED
+        attributes:
+          type: object
+          additionalProperties: {}
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/VariantResponse"
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImageResponse"
+        version:
+          type: integer
+          format: int64
+      required:
+      - attributes
+      - categoryIds
+      - code
+      - description
+      - images
+      - name
+      - organic
+      - productId
+      - status
+      - variants
+      - version
+    VariantResponse:
+      type: object
+      properties:
+        variantId:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        unitCode:
+          type: string
+        quantity:
+          type: number
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - ARCHIVED
+      required:
+      - code
+      - name
+      - quantity
+      - status
+      - unitCode
+      - variantId
+    CreateProductRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          minLength: 1
+          pattern: "[A-Z0-9][A-Z0-9_-]{0,63}"
+        name:
+          type: string
+          maxLength: 160
+          minLength: 0
+        description:
+          type:
+          - string
+          - "null"
+          maxLength: 4000
+          minLength: 0
+        organic:
+          type: boolean
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - ACTIVE
+          - ARCHIVED
+        attributes:
+          type: object
+          additionalProperties: {}
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 50
+          minItems: 0
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/VariantRequest"
+          maxItems: 50
+          minItems: 0
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImageRequest"
+          maxItems: 20
+          minItems: 0
+      required:
+      - attributes
+      - categoryIds
+      - code
+      - images
+      - name
+      - organic
+      - status
+      - variants
+    CreateCategoryRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          minLength: 1
+          pattern: "[A-Z0-9][A-Z0-9_-]{0,63}"
+        name:
+          type: string
+          maxLength: 160
+          minLength: 0
+        parentCategoryId:
+          type:
+          - string
+          - "null"
+          format: uuid
+      required:
+      - code
+      - name
+    ApiResponseCategoryResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/CategoryResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    CategoryResponse:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        parentCategoryId:
+          type:
+          - string
+          - "null"
+          format: uuid
+        version:
+          type: integer
+          format: int64
+      required:
+      - categoryId
+      - code
+      - name
+      - parentCategoryId
+      - version
+    PatchProductRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - ACTIVE
+          - ARCHIVED
+      required:
+      - status
+      - version
+    CollectionResponseProductSummary:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductSummary"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+      - pagination
+    Pagination:
+      type: object
+      properties:
+        nextCursor:
+          type:
+          - string
+          - "null"
+        hasNext:
+          type: boolean
+      required:
+      - hasNext
+      - nextCursor
+    ProductSummary:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        organic:
+          type: boolean
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - ACTIVE
+          - ARCHIVED
+        version:
+          type: integer
+          format: int64
+      required:
+      - code
+      - name
+      - organic
+      - productId
+      - status
+      - version
+    CollectionResponseCategoryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+      - pagination
+    CatalogProblem:
+      type: object
+      description: RFC 9457 problem with a stable code and request correlation ID.
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+        correlationId:
+          type: string
+      required:
+      - code
+      - correlationId
+      - detail
+      - instance
+      - status
+      - title
+      - type
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: "RS256 access token from the configured issuer and audience, with\
+        \ sub and exp. Admin authority is verified through Account /me using the forwarded\
+        \ token. The token must also be accepted by Account."
+      scheme: bearer
+      bearerFormat: JWT

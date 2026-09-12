@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: catalog-003-create-domain
+      author: fresveg
+      logicalFilePath: database/catalog/changelog/003-create-catalog-domain.yaml
+      dbms: postgresql
+      comment: Create the six Catalog domain tables, relational constraints, collection indexes, system units and least-privilege runtime grants.
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "1"
+            sql: SELECT CASE WHEN current_user = 'fresveg_catalog_migrator' AND current_schema() = 'catalog' THEN 1 ELSE 0 END
+      changes:
+        - sqlFile:
+            path: 003-create-catalog-domain.sql
+            relativeToChangelogFile: true
+            splitStatements: true
+      rollback:
+        - sqlFile:
+            path: 003-rollback-empty-catalog-domain.sql
+            relativeToChangelogFile: true
+            splitStatements: false

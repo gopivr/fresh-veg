@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: fulfillment-001-create-schema
+      author: fresveg
+      logicalFilePath: database/fulfillment/changelog/001-create-fulfillment-schema.yaml
+      dbms: postgresql
+      comment: Provision isolated schema, migration owner and runtime login without embedded credentials. No automated rollback after service initialization.
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT count(*) FROM pg_roles WHERE rolname IN ('fresveg_fulfillment', 'fresveg_fulfillment_migrator')
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT count(*) FROM pg_namespace WHERE nspname = 'fulfillment'
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE ROLE fresveg_fulfillment_migrator LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+              CREATE ROLE fresveg_fulfillment LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+              CREATE SCHEMA fulfillment AUTHORIZATION fresveg_fulfillment_migrator;
+              REVOKE ALL ON SCHEMA fulfillment FROM PUBLIC;
+              GRANT USAGE ON SCHEMA fulfillment TO fresveg_fulfillment;
+              ALTER ROLE fresveg_fulfillment_migrator SET search_path = fulfillment;
+              ALTER ROLE fresveg_fulfillment SET search_path = fulfillment;
+              ALTER DEFAULT PRIVILEGES FOR ROLE fresveg_fulfillment_migrator IN SCHEMA fulfillment REVOKE ALL ON TABLES FROM PUBLIC;
+              ALTER DEFAULT PRIVILEGES FOR ROLE fresveg_fulfillment_migrator IN SCHEMA fulfillment REVOKE ALL ON SEQUENCES FROM PUBLIC;
+              ALTER DEFAULT PRIVILEGES FOR ROLE fresveg_fulfillment_migrator IN SCHEMA fulfillment REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
+              DO $bootstrap$
+              BEGIN
+                EXECUTE format('GRANT CONNECT ON DATABASE %I TO fresveg_fulfillment, fresveg_fulfillment_migrator', current_database());
+              END
+              $bootstrap$;

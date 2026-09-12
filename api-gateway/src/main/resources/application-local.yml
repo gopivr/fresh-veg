@@ -1,0 +1,4 @@
+# Activate with SPRING_PROFILES_ACTIVE=local. Routes default to local service ports.
+logging:
+  level:
+    com.fresveg: ${FRESVEG_LOG_LEVEL:DEBUG}

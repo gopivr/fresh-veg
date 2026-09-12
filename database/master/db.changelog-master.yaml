@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - include:
+      file: changelog/001-restrict-public-access.yaml
+      relativeToChangelogFile: true
+      contextFilter: "@bootstrap"
+  - include:
+      file: ../account/db.changelog-account-master.yaml
+      relativeToChangelogFile: true
+      contextFilter: "@bootstrap"
+  - include:
+      file: ../catalog/db.changelog-catalog-master.yaml
+      relativeToChangelogFile: true
+      contextFilter: "@bootstrap"
+  - include:
+      file: ../supply/db.changelog-supply-master.yaml
+      relativeToChangelogFile: true
+      contextFilter: "@bootstrap"
+  - include:
+      file: ../commerce/db.changelog-commerce-master.yaml
+      relativeToChangelogFile: true
+      contextFilter: "@bootstrap"
+  - include:
+      file: ../fulfillment/db.changelog-fulfillment-master.yaml
+      relativeToChangelogFile: true
+      contextFilter: "@bootstrap"

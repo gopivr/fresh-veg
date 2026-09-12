@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-phase14-performance-indexes
+      author: codex
+      changes:
+        - sqlFile:
+            path: 004-phase14-performance-indexes.sql
+            relativeToChangelogFile: true
+      rollback: ""

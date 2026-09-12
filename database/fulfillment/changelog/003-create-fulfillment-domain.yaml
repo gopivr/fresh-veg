@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: fulfillment-003-create-domain
+      author: fresveg
+      contextFilter: "@service"
+      logicalFilePath: database/fulfillment/changelog/003-create-fulfillment-domain.yaml
+      comments: "Create delivery slots, fulfillments, shipments, tracking events and assignments for Phase 11."
+      preConditions:
+        - onFail: HALT
+        - runningAs:
+            username: fresveg_fulfillment_migrator
+      changes:
+        - sqlFile:
+            path: 003-create-fulfillment-domain.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+            stripComments: false
+      rollback:
+        - sqlFile:
+            path: 003-rollback-empty-fulfillment-domain.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+            stripComments: false

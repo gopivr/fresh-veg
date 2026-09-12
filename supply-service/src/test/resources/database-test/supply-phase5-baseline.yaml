@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: database/supply/changelog/002-protect-migration-history.yaml
+  - include:
+      file: database/supply/changelog/003-create-supply-offers.yaml

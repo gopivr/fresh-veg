@@ -1,0 +1,726 @@
+openapi: 3.1.0
+info:
+  title: FresVeg Fulfillment API
+  version: 0.1.0
+servers:
+- url: http://127.0.0.1:64395
+  description: Generated server url
+paths:
+  /internal/v1/fulfillments:
+    post:
+      tags:
+      - fulfillment-controller
+      summary: Configured service creates a fulfillment for a confirmed order
+      operationId: createFulfillment
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        schema:
+          type: string
+          maxLength: 128
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFulfillmentRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseFulfillmentResponse"
+        "400":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "401":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "403":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "404":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "409":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "500":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+      security:
+      - bearerAuth: []
+  /internal/v1/fulfillments/{id}/transitions:
+    post:
+      tags:
+      - fulfillment-controller
+      summary: Configured service advances fulfillment state
+      operationId: transitionFulfillment
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        schema:
+          type: string
+          maxLength: 128
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransitionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseFulfillmentResponse"
+        "400":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "401":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "403":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "404":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "409":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "500":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+      security:
+      - bearerAuth: []
+  /internal/v1/fulfillment/slots:
+    post:
+      tags:
+      - fulfillment-controller
+      summary: Configured service creates an operational delivery slot
+      operationId: createDeliverySlot
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        schema:
+          type: string
+          maxLength: 128
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeliverySlotSeedRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseDeliverySlotResponse"
+        "400":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "401":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "403":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "404":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "409":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "500":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/fulfillments/{id}:
+    get:
+      tags:
+      - fulfillment-controller
+      summary: "Read fulfillment, items and shipment state"
+      operationId: getFulfillment
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseFulfillmentResponse"
+        "400":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "401":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "403":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "404":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "409":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "500":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/fulfillments/{id}/tracking:
+    get:
+      tags:
+      - fulfillment-controller
+      summary: Read shipment tracking events for a fulfillment
+      operationId: getFulfillmentTracking
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseTrackingResponse"
+        "400":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "401":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "403":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "404":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "409":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "500":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/fulfillment/slots:
+    get:
+      tags:
+      - fulfillment-controller
+      summary: List open delivery slots by service area and time window
+      operationId: listDeliverySlots
+      parameters:
+      - name: serviceArea
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - name: X-Correlation-ID
+        in: header
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseListDeliverySlotResponse"
+        "400":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "401":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "403":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "404":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "409":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+        "500":
+          description: Fulfillment error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentProblem"
+      security:
+      - bearerAuth: []
+components:
+  schemas:
+    CreateFulfillmentItem:
+      type: object
+      properties:
+        orderItemId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        listingId:
+          type: string
+          format: uuid
+        vendorId:
+          type: string
+          format: uuid
+        productName:
+          type: string
+          maxLength: 240
+          minLength: 0
+        quantity:
+          type: number
+          minimum: 0.000001
+        unitCode:
+          type: string
+          maxLength: 32
+          minLength: 0
+      required:
+      - listingId
+      - orderItemId
+      - productId
+      - productName
+      - quantity
+      - unitCode
+      - vendorId
+    CreateFulfillmentRequest:
+      type: object
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        deliverySlotId:
+          type: string
+          format: uuid
+        serviceArea:
+          type: string
+          maxLength: 80
+          minLength: 0
+        requestedStart:
+          type: string
+          format: date-time
+        requestedEnd:
+          type: string
+          format: date-time
+        deliveryAddress:
+          type: object
+          additionalProperties: {}
+          minProperties: 1
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateFulfillmentItem"
+          minItems: 1
+      required:
+      - customerId
+      - deliveryAddress
+      - deliverySlotId
+      - items
+      - orderId
+      - requestedEnd
+      - requestedStart
+      - serviceArea
+    ApiResponseFulfillmentResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/FulfillmentResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+    FulfillmentItemResponse:
+      type: object
+      properties:
+        fulfillmentItemId:
+          type: string
+          format: uuid
+        orderItemId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        listingId:
+          type: string
+          format: uuid
+        vendorId:
+          type: string
+          format: uuid
+        productName:
+          type: string
+        quantity:
+          type: number
+        unitCode:
+          type: string
+        status:
+          type: string
+    FulfillmentResponse:
+      type: object
+      properties:
+        fulfillmentId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        deliverySlotId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        serviceArea:
+          type: string
+        deliveryAddress:
+          type: object
+          additionalProperties: {}
+        requestedStart:
+          type: string
+          format: date-time
+        requestedEnd:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FulfillmentItemResponse"
+        shipments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShipmentResponse"
+        version:
+          type: integer
+          format: int64
+    Meta:
+      type: object
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    ShipmentEventResponse:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        shipmentId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        description:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+    ShipmentResponse:
+      type: object
+      properties:
+        shipmentId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        carrier:
+          type: string
+        trackingReference:
+          type: string
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShipmentEventResponse"
+        version:
+          type: integer
+          format: int64
+    TransitionRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          minLength: 1
+          pattern: PACKING|READY_FOR_DELIVERY|OUT_FOR_DELIVERY|DELIVERED|CANCELLED
+        version:
+          type: integer
+          format: int64
+        description:
+          type: string
+          maxLength: 240
+          minLength: 0
+      required:
+      - status
+      - version
+    DeliverySlotSeedRequest:
+      type: object
+      properties:
+        serviceArea:
+          type: string
+          maxLength: 80
+          minLength: 0
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+          format: int32
+          minimum: 0
+        status:
+          type: string
+          pattern: OPEN|CLOSED|CANCELLED
+      required:
+      - endTime
+      - serviceArea
+      - startTime
+    ApiResponseDeliverySlotResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/DeliverySlotResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+    DeliverySlotResponse:
+      type: object
+      properties:
+        slotId:
+          type: string
+          format: uuid
+        serviceArea:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+          format: int32
+        reservedCapacity:
+          type: integer
+          format: int32
+        status:
+          type: string
+        version:
+          type: integer
+          format: int64
+    ApiResponseTrackingResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/TrackingResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+    TrackingResponse:
+      type: object
+      properties:
+        fulfillmentId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        shipments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShipmentResponse"
+    ApiResponseListDeliverySlotResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeliverySlotResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+    FulfillmentProblem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        code:
+          type: string
+        correlationId:
+          type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: RS256 token from configured issuer/audience. Internal fulfillment
+        creation requires a configured service subject.
+      scheme: bearer
+      bearerFormat: JWT

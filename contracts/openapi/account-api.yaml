@@ -1,0 +1,955 @@
+openapi: 3.1.0
+info:
+  title: FresVeg Account API
+  description: "Account identity, owned addresses and stored vendor memberships. First\
+    \ authenticated use provisions a customer account. Collections use ascending UUID\
+    \ cursors; they are not snapshots."
+  version: 0.1.0
+servers:
+- url: /
+paths:
+  /api/v1/accounts/me/addresses/{addressId}:
+    put:
+      tags:
+      - Account
+      summary: Replace an owned address using its current version
+      operationId: replaceMyAddress
+      parameters:
+      - name: addressId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAddressRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseAddressResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "403":
+          description: "Account or customer profile is inactive, or access is denied"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "409":
+          description: "Account data conflict; for address updates, reload the current\
+            \ version"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "404":
+          description: Address does not exist or is owned by another customer
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/accounts/me/addresses:
+    get:
+      tags:
+      - Account
+      summary: List the authenticated customer's addresses
+      operationId: listMyAddresses
+      parameters:
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: cursor
+        in: query
+        description: Exclusive last UUID from nextCursor; omit for the first page
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponseAddressResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "403":
+          description: "Account or customer profile is inactive, or access is denied"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "409":
+          description: "Account data conflict; for address updates, reload the current\
+            \ version"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Account
+      summary: Create an address owned by the authenticated customer
+      operationId: createMyAddress
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAddressRequest"
+        required: true
+      responses:
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "403":
+          description: "Account or customer profile is inactive, or access is denied"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "409":
+          description: "Account data conflict; for address updates, reload the current\
+            \ version"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "201":
+          description: Address created
+          headers:
+            Location:
+              description: Owned address resource path
+              schema:
+                type: string
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseAddressResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/accounts/vendors/{vendorId}:
+    get:
+      tags:
+      - vendor-directory-controller
+      summary: Read an active vendor business name for transaction snapshots
+      operationId: getVendorSummary
+      parameters:
+      - name: vendorId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseVendorSummary"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "403":
+          description: "Account or customer profile is inactive, or access is denied"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/accounts/me:
+    get:
+      tags:
+      - Account
+      summary: Read the account for the authenticated identity
+      operationId: getMyAccount
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseAccountResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "403":
+          description: "Account or customer profile is inactive, or access is denied"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "409":
+          description: "Account data conflict; for address updates, reload the current\
+            \ version"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/accounts/me/vendor-memberships:
+    get:
+      tags:
+      - Account
+      summary: List active stored memberships in active vendors
+      operationId: listMyVendorMemberships
+      parameters:
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: cursor
+        in: query
+        description: Exclusive last UUID from nextCursor; omit for the first page
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponseVendorMembershipResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "403":
+          description: "Account or customer profile is inactive, or access is denied"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/AccountProblem"
+      security:
+      - bearerAuth: []
+components:
+  schemas:
+    UpdateAddressRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        label:
+          type:
+          - string
+          - "null"
+          maxLength: 50
+          minLength: 0
+        recipientName:
+          type: string
+          maxLength: 120
+          minLength: 0
+        line1:
+          type: string
+          maxLength: 200
+          minLength: 0
+        line2:
+          type:
+          - string
+          - "null"
+          maxLength: 200
+          minLength: 0
+        city:
+          type: string
+          maxLength: 100
+          minLength: 0
+        region:
+          type:
+          - string
+          - "null"
+          maxLength: 100
+          minLength: 0
+        postalCode:
+          type: string
+          maxLength: 20
+          minLength: 0
+        countryCode:
+          type: string
+          maxLength: 2
+          minLength: 0
+          pattern: "[A-Z]{2}"
+        phone:
+          type:
+          - string
+          - "null"
+          maxLength: 32
+          minLength: 0
+        version:
+          type: integer
+          format: int64
+      required:
+      - city
+      - countryCode
+      - line1
+      - postalCode
+      - recipientName
+      - version
+    AddressResponse:
+      type: object
+      properties:
+        addressId:
+          type: string
+          format: uuid
+        label:
+          type:
+          - string
+          - "null"
+        recipientName:
+          type: string
+        line1:
+          type: string
+        line2:
+          type:
+          - string
+          - "null"
+        city:
+          type: string
+        region:
+          type:
+          - string
+          - "null"
+        postalCode:
+          type: string
+        countryCode:
+          type: string
+        phone:
+          type:
+          - string
+          - "null"
+        version:
+          type: integer
+          format: int64
+      required:
+      - addressId
+      - city
+      - countryCode
+      - label
+      - line1
+      - line2
+      - phone
+      - postalCode
+      - recipientName
+      - region
+      - version
+    ApiResponseAddressResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AddressResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    Meta:
+      type: object
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+      - requestId
+      - timestamp
+    CreateAddressRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        label:
+          type:
+          - string
+          - "null"
+          maxLength: 50
+          minLength: 0
+        recipientName:
+          type: string
+          maxLength: 120
+          minLength: 0
+        line1:
+          type: string
+          maxLength: 200
+          minLength: 0
+        line2:
+          type:
+          - string
+          - "null"
+          maxLength: 200
+          minLength: 0
+        city:
+          type: string
+          maxLength: 100
+          minLength: 0
+        region:
+          type:
+          - string
+          - "null"
+          maxLength: 100
+          minLength: 0
+        postalCode:
+          type: string
+          maxLength: 20
+          minLength: 0
+        countryCode:
+          type: string
+          maxLength: 2
+          minLength: 0
+          pattern: "[A-Z]{2}"
+        phone:
+          type:
+          - string
+          - "null"
+          maxLength: 32
+          minLength: 0
+      required:
+      - city
+      - countryCode
+      - line1
+      - postalCode
+      - recipientName
+    ApiResponseVendorSummary:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/VendorSummary"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    VendorSummary:
+      type: object
+      properties:
+        vendorId:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+      - name
+      - vendorId
+    AccountResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        displayName:
+          type:
+          - string
+          - "null"
+        email:
+          type:
+          - string
+          - "null"
+        status:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        preferences:
+          $ref: "#/components/schemas/Preferences"
+      required:
+      - customerId
+      - displayName
+      - email
+      - preferences
+      - roles
+      - status
+      - userId
+    ApiResponseAccountResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AccountResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    Preferences:
+      type: object
+      properties:
+        locale:
+          type:
+          - string
+          - "null"
+        timeZone:
+          type:
+          - string
+          - "null"
+        marketingOptIn:
+          type: boolean
+      required:
+      - locale
+      - marketingOptIn
+      - timeZone
+    CollectionResponseVendorMembershipResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/VendorMembershipResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+      - pagination
+    Pagination:
+      type: object
+      properties:
+        nextCursor:
+          type:
+          - string
+          - "null"
+          format: uuid
+        hasNext:
+          type: boolean
+      required:
+      - hasNext
+      - nextCursor
+    VendorMembershipResponse:
+      type: object
+      properties:
+        membershipId:
+          type: string
+          format: uuid
+        vendorId:
+          type: string
+          format: uuid
+        vendorCode:
+          type: string
+        vendorName:
+          type: string
+        role:
+          type: string
+      required:
+      - membershipId
+      - role
+      - vendorCode
+      - vendorId
+      - vendorName
+    CollectionResponseAddressResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AddressResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+      - pagination
+    AccountProblem:
+      type: object
+      description: RFC 9457 problem with a stable code and request correlation ID.
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+        correlationId:
+          type: string
+      required:
+      - code
+      - correlationId
+      - detail
+      - instance
+      - status
+      - title
+      - type
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: "RS256 access token from the configured issuer and audience, with\
+        \ sub and exp. Ownership and roles come from Account data."
+      scheme: bearer
+      bearerFormat: JWT

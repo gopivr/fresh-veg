@@ -1,0 +1,2295 @@
+openapi: 3.1.0
+info:
+  title: FresVeg Commerce API
+  description: "Customer-owned carts. Prices are current Supply unit prices, never\
+    \ persisted or client-authoritative. Checkout preview resolves current address,\
+    \ prices, stock and explicit delivery/pricing policies without creating an order\
+    \ or reservation. Orders persist authoritative snapshots, authorize payment through\
+    \ a provider-neutral gateway, commit inventory and retain a transactional outbox."
+  version: 0.1.0
+servers:
+- url: http://127.0.0.1:49403
+  description: Generated server url
+paths:
+  /api/v1/vendor/orders/{orderId}/reject:
+    post:
+      tags:
+      - vendor-order-controller
+      summary: Vendor administrator rejects its items when the order is still awaiting
+        payment
+      operationId: rejectVendorOrder
+      parameters:
+      - name: vendorId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorDecisionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseVendorOrderResponse"
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/vendor/orders/{orderId}/accept:
+    post:
+      tags:
+      - vendor-order-controller
+      summary: Vendor administrator accepts its items when the order is still awaiting
+        payment
+      operationId: acceptVendorOrder
+      parameters:
+      - name: vendorId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorDecisionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseVendorOrderResponse"
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/orders:
+    get:
+      tags:
+      - order-controller
+      summary: Read a cursor page of owned orders
+      operationId: listOrders
+      parameters:
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+          maximum: 10
+          minimum: 1
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseOrderPage"
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - order-controller
+      summary: "Create an order with authoritative snapshots, local payment authorization\
+        \ and committed inventory; replay a customer-scoped Idempotency-Key"
+      operationId: createOrder
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          maxLength: 128
+          minLength: 1
+          pattern: "[A-Za-z0-9][A-Za-z0-9._:-]{0,127}"
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+        required: true
+      responses:
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "201":
+          description: OK
+          headers:
+            Location:
+              schema:
+                type: string
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseOrderResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/orders/{orderId}/cancel:
+    post:
+      tags:
+      - order-controller
+      summary: Cancel an unpaid order after stock release or a confirmed order after
+        local refund
+      operationId: cancelOrder
+      parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseOrderResponse"
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/checkout/preview:
+    post:
+      tags:
+      - checkout-controller
+      summary: "Resolve owned address, current prices, eligible stock and delivery\
+        \ policy into a nonbinding checkout breakdown"
+      operationId: previewCheckout
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponsePreviewResponse"
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/carts:
+    post:
+      tags:
+      - cart-controller
+      summary: Create a cart owned by the authenticated Account customer
+      operationId: createCart
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCartRequest"
+        required: true
+      responses:
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "201":
+          description: OK
+          headers:
+            Location:
+              schema:
+                type: string
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseCartResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/carts/{cartId}/items:
+    post:
+      tags:
+      - cart-controller
+      summary: Add a validated listing and quantity using the current cart version
+      operationId: addCartItem
+      parameters:
+      - name: cartId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddCartItemRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseMutationResponse"
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/carts/{cartId}/items/{itemId}:
+    delete:
+      tags:
+      - cart-controller
+      summary: Remove an owned item without requiring Supply availability
+      operationId: removeCartItem
+      parameters:
+      - name: cartId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: version
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseMutationResponse"
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - cart-controller
+      summary: Replace quantity using the current cart version
+      operationId: updateCartItem
+      parameters:
+      - name: cartId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCartItemRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseMutationResponse"
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/vendor/orders:
+    get:
+      tags:
+      - vendor-order-controller
+      summary: Read a verified vendor's orders with only its item snapshots
+      operationId: listVendorOrders
+      parameters:
+      - name: vendorId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+          maximum: 10
+          minimum: 1
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseVendorOrderPage"
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/vendor/orders/{orderId}:
+    get:
+      tags:
+      - vendor-order-controller
+      summary: Read only the verified vendor's items and order state
+      operationId: getVendorOrder
+      parameters:
+      - name: vendorId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseVendorOrderResponse"
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/orders/{orderId}:
+    get:
+      tags:
+      - order-controller
+      summary: Read owned immutable snapshots and current lifecycle state
+      operationId: getOrder
+      parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseOrderResponse"
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/carts/{cartId}:
+    get:
+      tags:
+      - cart-controller
+      summary: Read a page of cart items with current Supply prices
+      operationId: getCart
+      parameters:
+      - name: cartId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+          maximum: 10
+          minimum: 1
+      - name: cursor
+        in: query
+        description: "Opaque cursor bound to this customer, cart and cart version;\
+          \ restart pagination after an edit"
+        required: false
+        schema:
+          type: string
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseCartResponse"
+        "400":
+          description: Invalid request or changed cursor
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "401":
+          description: Missing/invalid JWT
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "403":
+          description: Account identity denied
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "404":
+          description: Owned cart/item/address not found
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "409":
+          description: "Stale/empty cart, unavailable item/stock/address delivery\
+            \ combination, or cart limit"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+        "503":
+          description: "Owner unavailable, malformed response, timeout or resilience\
+            \ rejection; no stale price fallback"
+          headers:
+            X-Correlation-ID:
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/CommerceProblem"
+      security:
+      - bearerAuth: []
+components:
+  schemas:
+    VendorDecisionRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+      required:
+      - version
+    ApiResponseVendorOrderResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/VendorOrderResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    DeliveryQuote:
+      type: object
+      properties:
+        deliverySlotId:
+          type: string
+          format: uuid
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        currency:
+          type: string
+        deliveryFee:
+          type: number
+        source:
+          type: string
+      required:
+      - currency
+      - deliveryFee
+      - deliverySlotId
+      - endsAt
+      - source
+      - startsAt
+    Meta:
+      type: object
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+      - requestId
+      - timestamp
+    OrderLine:
+      type: object
+      properties:
+        orderItemId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        listingId:
+          type: string
+          format: uuid
+        vendorId:
+          type: string
+          format: uuid
+        productName:
+          type: string
+        vendorName:
+          type: string
+        vendorSku:
+          type: string
+        unitCode:
+          type: string
+        quantity:
+          type: number
+        unitPrice:
+          type: number
+        discountAmount:
+          type: number
+        taxAmount:
+          type: number
+        lineTotal:
+          type: number
+        productSnapshot:
+          type: object
+          additionalProperties: true
+          description: "Immutable product, listing, vendor and authoritative price\
+            \ snapshots"
+      required:
+      - discountAmount
+      - lineTotal
+      - listingId
+      - orderItemId
+      - productId
+      - productName
+      - productSnapshot
+      - quantity
+      - taxAmount
+      - unitCode
+      - unitPrice
+      - vendorId
+      - vendorName
+      - vendorSku
+    VendorOrderResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        orderNumber:
+          type: string
+        status:
+          type: string
+          enum:
+          - PENDING_PAYMENT
+          - PAYMENT_AUTHORIZED
+          - CONFIRMED
+          - PAYMENT_FAILED
+          - CANCEL_PENDING
+          - CANCELLED
+        vendorStatus:
+          type: string
+          enum:
+          - PENDING
+          - ACCEPTED
+          - REJECTED
+        currency:
+          type: string
+        deliverySlot:
+          $ref: "#/components/schemas/DeliveryQuote"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLine"
+        version:
+          type: integer
+          format: int64
+      required:
+      - currency
+      - deliverySlot
+      - items
+      - orderId
+      - orderNumber
+      - status
+      - vendorStatus
+      - version
+    CreateOrderRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        cartId:
+          type: string
+          format: uuid
+        deliveryAddressId:
+          type: string
+          format: uuid
+        deliverySlotId:
+          type: string
+          format: uuid
+        paymentMethodId:
+          type: string
+          format: uuid
+      required:
+      - cartId
+      - deliveryAddressId
+      - deliverySlotId
+      - paymentMethodId
+    Address:
+      type: object
+      properties:
+        addressId:
+          type: string
+          format: uuid
+        recipientName:
+          type: string
+        line1:
+          type: string
+        line2:
+          type:
+          - string
+          - "null"
+        city:
+          type: string
+        region:
+          type:
+          - string
+          - "null"
+        postalCode:
+          type: string
+        countryCode:
+          type: string
+        phone:
+          type:
+          - string
+          - "null"
+        version:
+          type: integer
+          format: int64
+      required:
+      - addressId
+      - city
+      - countryCode
+      - line1
+      - line2
+      - phone
+      - postalCode
+      - recipientName
+      - region
+      - version
+    ApiResponseOrderResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/OrderResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    OrderResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        orderNumber:
+          type: string
+        status:
+          type: string
+          enum:
+          - PENDING_PAYMENT
+          - PAYMENT_AUTHORIZED
+          - CONFIRMED
+          - PAYMENT_FAILED
+          - CANCEL_PENDING
+          - CANCELLED
+        currency:
+          type: string
+        subtotal:
+          type: number
+        discountAmount:
+          type: number
+        taxAmount:
+          type: number
+        deliveryFee:
+          type: number
+        grandTotal:
+          type: number
+        shippingAddress:
+          $ref: "#/components/schemas/Address"
+        deliverySlot:
+          $ref: "#/components/schemas/DeliveryQuote"
+        pricingPolicyId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLine"
+        reservationExpiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          format: int64
+      required:
+      - createdAt
+      - currency
+      - deliveryFee
+      - deliverySlot
+      - discountAmount
+      - grandTotal
+      - items
+      - orderId
+      - orderNumber
+      - pricingPolicyId
+      - reservationExpiresAt
+      - shippingAddress
+      - status
+      - subtotal
+      - taxAmount
+      - version
+    PreviewRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        cartId:
+          type: string
+          format: uuid
+        deliveryAddressId:
+          type: string
+          format: uuid
+        deliverySlotId:
+          type: string
+          format: uuid
+      required:
+      - cartId
+      - deliveryAddressId
+      - deliverySlotId
+    ApiResponsePreviewResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/PreviewResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    PreviewLine:
+      type: object
+      properties:
+        itemId:
+          type: string
+          format: uuid
+        listingId:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+        priceId:
+          type: string
+          format: uuid
+        tierId:
+          type:
+          - string
+          - "null"
+          format: uuid
+        unitPrice:
+          type: number
+        lineSubtotal:
+          type: number
+        priceFetchedAt:
+          type: string
+          format: date-time
+        availabilityCheckedAt:
+          type: string
+          format: date-time
+      required:
+      - availabilityCheckedAt
+      - itemId
+      - lineSubtotal
+      - listingId
+      - priceFetchedAt
+      - priceId
+      - quantity
+      - tierId
+      - unitPrice
+    PreviewResponse:
+      type: object
+      properties:
+        cartId:
+          type: string
+          format: uuid
+        cartVersion:
+          type: integer
+          format: int64
+        currency:
+          type: string
+        deliveryAddress:
+          $ref: "#/components/schemas/Address"
+        deliverySlot:
+          $ref: "#/components/schemas/DeliveryQuote"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreviewLine"
+        subtotal:
+          type: number
+        discount:
+          type: number
+        tax:
+          type: number
+        deliveryFee:
+          type: number
+        grandTotal:
+          type: number
+        pricingPolicyId:
+          type: string
+        evaluatedAt:
+          type: string
+          format: date-time
+        stockReserved:
+          type: boolean
+      required:
+      - cartId
+      - cartVersion
+      - currency
+      - deliveryAddress
+      - deliveryFee
+      - deliverySlot
+      - discount
+      - evaluatedAt
+      - grandTotal
+      - items
+      - pricingPolicyId
+      - stockReserved
+      - subtotal
+      - tax
+    CreateCartRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        currency:
+          type: string
+          pattern: "[A-Z]{3}"
+      required:
+      - currency
+    ApiResponseCartResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/CartResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    CartResponse:
+      type: object
+      properties:
+        cartId:
+          type: string
+          format: uuid
+        currency:
+          type: string
+        version:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+      - cartId
+      - currency
+      - items
+      - pagination
+      - version
+    ItemResponse:
+      type: object
+      properties:
+        itemId:
+          type: string
+          format: uuid
+        listingId:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+        pricingStatus:
+          type: string
+        currentPrice:
+          oneOf:
+          - $ref: "#/components/schemas/PriceResponse"
+          - type: "null"
+      required:
+      - currentPrice
+      - itemId
+      - listingId
+      - pricingStatus
+      - quantity
+    Pagination:
+      type: object
+      properties:
+        nextCursor:
+          type:
+          - string
+          - "null"
+        hasNext:
+          type: boolean
+      required:
+      - hasNext
+      - nextCursor
+    PriceResponse:
+      type: object
+      properties:
+        priceId:
+          type: string
+          format: uuid
+        tierId:
+          type:
+          - string
+          - "null"
+          format: uuid
+        unitPrice:
+          type: number
+        fetchedAt:
+          type: string
+          format: date-time
+      required:
+      - fetchedAt
+      - priceId
+      - tierId
+      - unitPrice
+    AddCartItemRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+        listingId:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+      required:
+      - listingId
+      - quantity
+      - version
+    ApiResponseMutationResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/MutationResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    MutationResponse:
+      type: object
+      properties:
+        cartId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          format: int64
+        itemId:
+          type: string
+          format: uuid
+      required:
+      - cartId
+      - itemId
+      - version
+    UpdateCartItemRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+        quantity:
+          type: number
+      required:
+      - quantity
+      - version
+    ApiResponseVendorOrderPage:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/VendorOrderPage"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    VendorOrderPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/VendorOrderResponse"
+        nextCursor:
+          type:
+          - string
+          - "null"
+          format: uuid
+        hasNext:
+          type: boolean
+      required:
+      - data
+      - hasNext
+      - nextCursor
+    ApiResponseOrderPage:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/OrderPage"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    OrderPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderResponse"
+        nextCursor:
+          type:
+          - string
+          - "null"
+          format: uuid
+        hasNext:
+          type: boolean
+      required:
+      - data
+      - hasNext
+      - nextCursor
+    CommerceProblem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+        correlationId:
+          type: string
+      required:
+      - code
+      - correlationId
+      - detail
+      - instance
+      - status
+      - title
+      - type
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: "Trusted issuer, RS256, sub/exp and Commerce audience; token must\
+        \ also be accepted by Account. Stored Account customer identity establishes\
+        \ ownership."
+      scheme: bearer
+      bearerFormat: JWT

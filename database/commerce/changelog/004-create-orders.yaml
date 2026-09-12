@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: commerce-004-create-orders
+      author: fresveg
+      logicalFilePath: database/commerce/changelog/004-create-orders.yaml
+      dbms: postgresql
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "1"
+            sql: SELECT CASE WHEN current_user = 'fresveg_commerce_migrator' AND current_schema() = 'commerce' THEN 1 ELSE 0 END
+      changes:
+        - sqlFile:
+            path: 004-create-orders.sql
+            relativeToChangelogFile: true
+            splitStatements: true
+      rollback:
+        - sqlFile:
+            path: 004-rollback-empty-orders.sql
+            relativeToChangelogFile: true
+            splitStatements: false

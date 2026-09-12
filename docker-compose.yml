@@ -1,0 +1,271 @@
+name: fresveg
+
+x-service-env: &service-env
+  SPRING_PROFILES_ACTIVE: local
+  SERVER_ADDRESS: 0.0.0.0
+  OIDC_ISSUER_URI: ${OIDC_ISSUER_URI:-https://identity.example.test}
+  OIDC_JWK_SET_URI: ${OIDC_JWK_SET_URI:-https://identity.example.test/.well-known/jwks.json}
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,metrics,prometheus
+  MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+
+x-healthcheck: &http-healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 18
+  start_period: 30s
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:17.11-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fresveg}
+      POSTGRES_USER: ${POSTGRES_USER:-fresveg_bootstrap}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fresveg_bootstrap_password}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  redis:
+    image: ${REDIS_IMAGE:-redis:7.4.11-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf}
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  kafka:
+    image: ${KAFKA_IMAGE:-apache/kafka:4.1.1@sha256:b20a7396f6fb4d1db6f16c8ff74752069aa139271c904d07cf3d85a683cb8ea0}
+    profiles: ["kafka"]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    ports:
+      - "127.0.0.1:${KAFKA_PORT:-9092}:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+
+  database-bootstrap:
+    image: maven:3.9.10-eclipse-temurin-21
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - maven_cache:/root/.m2
+    environment:
+      BOOTSTRAP_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-fresveg}
+      BOOTSTRAP_DB_USER: ${POSTGRES_USER:-fresveg_bootstrap}
+      BOOTSTRAP_DB_PASSWORD: ${POSTGRES_PASSWORD:-fresveg_bootstrap_password}
+    command: ["mvn", "-N", "-Pdatabase-bootstrap", "liquibase:update"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  database-local-passwords:
+    image: ${POSTGRES_IMAGE:-postgres:17.11-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73}
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-fresveg_bootstrap_password}
+      POSTGRES_DB: ${POSTGRES_DB:-fresveg}
+      POSTGRES_USER: ${POSTGRES_USER:-fresveg_bootstrap}
+      ACCOUNT_DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:-account_password}
+      ACCOUNT_MIGRATION_DB_PASSWORD: ${ACCOUNT_MIGRATION_DB_PASSWORD:-account_migration_password}
+      CATALOG_DB_PASSWORD: ${CATALOG_DB_PASSWORD:-catalog_password}
+      CATALOG_MIGRATION_DB_PASSWORD: ${CATALOG_MIGRATION_DB_PASSWORD:-catalog_migration_password}
+      SUPPLY_DB_PASSWORD: ${SUPPLY_DB_PASSWORD:-supply_password}
+      SUPPLY_MIGRATION_DB_PASSWORD: ${SUPPLY_MIGRATION_DB_PASSWORD:-supply_migration_password}
+      COMMERCE_DB_PASSWORD: ${COMMERCE_DB_PASSWORD:-commerce_password}
+      COMMERCE_MIGRATION_DB_PASSWORD: ${COMMERCE_MIGRATION_DB_PASSWORD:-commerce_migration_password}
+      FULFILLMENT_DB_PASSWORD: ${FULFILLMENT_DB_PASSWORD:-fulfillment_password}
+      FULFILLMENT_MIGRATION_DB_PASSWORD: ${FULFILLMENT_MIGRATION_DB_PASSWORD:-fulfillment_migration_password}
+    command:
+      - sh
+      - -c
+      - |
+        set -eu
+        psql -h postgres -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" <<SQL
+        ALTER ROLE fresveg_account PASSWORD '$$ACCOUNT_DB_PASSWORD';
+        ALTER ROLE fresveg_account_migrator PASSWORD '$$ACCOUNT_MIGRATION_DB_PASSWORD';
+        ALTER ROLE fresveg_catalog PASSWORD '$$CATALOG_DB_PASSWORD';
+        ALTER ROLE fresveg_catalog_migrator PASSWORD '$$CATALOG_MIGRATION_DB_PASSWORD';
+        ALTER ROLE fresveg_supply PASSWORD '$$SUPPLY_DB_PASSWORD';
+        ALTER ROLE fresveg_supply_migrator PASSWORD '$$SUPPLY_MIGRATION_DB_PASSWORD';
+        ALTER ROLE fresveg_commerce PASSWORD '$$COMMERCE_DB_PASSWORD';
+        ALTER ROLE fresveg_commerce_migrator PASSWORD '$$COMMERCE_MIGRATION_DB_PASSWORD';
+        ALTER ROLE fresveg_fulfillment PASSWORD '$$FULFILLMENT_DB_PASSWORD';
+        ALTER ROLE fresveg_fulfillment_migrator PASSWORD '$$FULFILLMENT_MIGRATION_DB_PASSWORD';
+        SQL
+    depends_on:
+      database-bootstrap:
+        condition: service_completed_successfully
+
+  account-service:
+    build:
+      context: .
+      dockerfile: account-service/Dockerfile
+    environment:
+      <<: *service-env
+      SERVER_PORT: 8081
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-fresveg}
+      DB_USER: fresveg_account
+      DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:-account_password}
+      MIGRATION_DB_USER: fresveg_account_migrator
+      MIGRATION_DB_PASSWORD: ${ACCOUNT_MIGRATION_DB_PASSWORD:-account_migration_password}
+      OIDC_AUDIENCE: fresveg-account
+    ports:
+      - "127.0.0.1:${ACCOUNT_PORT:-8081}:8081"
+    depends_on:
+      database-local-passwords:
+        condition: service_completed_successfully
+    healthcheck:
+      <<: *http-healthcheck
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/actuator/health"]
+
+  catalog-service:
+    build:
+      context: .
+      dockerfile: catalog-service/Dockerfile
+    environment:
+      <<: *service-env
+      SERVER_PORT: 8082
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-fresveg}
+      DB_USER: fresveg_catalog
+      DB_PASSWORD: ${CATALOG_DB_PASSWORD:-catalog_password}
+      MIGRATION_DB_USER: fresveg_catalog_migrator
+      MIGRATION_DB_PASSWORD: ${CATALOG_MIGRATION_DB_PASSWORD:-catalog_migration_password}
+      ACCOUNT_BASE_URL: http://account-service:8081
+      OIDC_AUDIENCE: fresveg-catalog
+    ports:
+      - "127.0.0.1:${CATALOG_PORT:-8082}:8082"
+    depends_on:
+      account-service:
+        condition: service_healthy
+    healthcheck:
+      <<: *http-healthcheck
+      test: ["CMD", "curl", "-fsS", "http://localhost:8082/actuator/health"]
+
+  supply-service:
+    build:
+      context: .
+      dockerfile: supply-service/Dockerfile
+    environment:
+      <<: *service-env
+      SERVER_PORT: 8083
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-fresveg}
+      DB_USER: fresveg_supply
+      DB_PASSWORD: ${SUPPLY_DB_PASSWORD:-supply_password}
+      MIGRATION_DB_USER: fresveg_supply_migrator
+      MIGRATION_DB_PASSWORD: ${SUPPLY_MIGRATION_DB_PASSWORD:-supply_migration_password}
+      ACCOUNT_BASE_URL: http://account-service:8081
+      CATALOG_BASE_URL: http://catalog-service:8082
+      OIDC_AUDIENCE: fresveg-supply
+    ports:
+      - "127.0.0.1:${SUPPLY_PORT:-8083}:8083"
+    depends_on:
+      catalog-service:
+        condition: service_healthy
+    healthcheck:
+      <<: *http-healthcheck
+      test: ["CMD", "curl", "-fsS", "http://localhost:8083/actuator/health"]
+
+  commerce-service:
+    build:
+      context: .
+      dockerfile: commerce-service/Dockerfile
+    environment:
+      <<: *service-env
+      SERVER_PORT: 8084
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-fresveg}
+      DB_USER: fresveg_commerce
+      DB_PASSWORD: ${COMMERCE_DB_PASSWORD:-commerce_password}
+      MIGRATION_DB_USER: fresveg_commerce_migrator
+      MIGRATION_DB_PASSWORD: ${COMMERCE_MIGRATION_DB_PASSWORD:-commerce_migration_password}
+      ACCOUNT_BASE_URL: http://account-service:8081
+      CATALOG_BASE_URL: http://catalog-service:8082
+      SUPPLY_BASE_URL: http://supply-service:8083
+      OUTBOX_PUBLISHER: ${OUTBOX_PUBLISHER:-noop}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      OIDC_AUDIENCE: fresveg-commerce
+    ports:
+      - "127.0.0.1:${COMMERCE_PORT:-8084}:8084"
+    depends_on:
+      supply-service:
+        condition: service_healthy
+    healthcheck:
+      <<: *http-healthcheck
+      test: ["CMD", "curl", "-fsS", "http://localhost:8084/actuator/health"]
+
+  fulfillment-service:
+    build:
+      context: .
+      dockerfile: fulfillment-service/Dockerfile
+    environment:
+      <<: *service-env
+      SERVER_PORT: 8085
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-fresveg}
+      DB_USER: fresveg_fulfillment
+      DB_PASSWORD: ${FULFILLMENT_DB_PASSWORD:-fulfillment_password}
+      MIGRATION_DB_USER: fresveg_fulfillment_migrator
+      MIGRATION_DB_PASSWORD: ${FULFILLMENT_MIGRATION_DB_PASSWORD:-fulfillment_migration_password}
+      OIDC_AUDIENCE: fresveg-fulfillment
+    ports:
+      - "127.0.0.1:${FULFILLMENT_PORT:-8085}:8085"
+    depends_on:
+      database-local-passwords:
+        condition: service_completed_successfully
+    healthcheck:
+      <<: *http-healthcheck
+      test: ["CMD", "curl", "-fsS", "http://localhost:8085/actuator/health"]
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    environment:
+      <<: *service-env
+      SERVER_PORT: 8080
+      OIDC_AUDIENCE: fresveg-gateway
+      ACCOUNT_BASE_URL: http://account-service:8081
+      CATALOG_BASE_URL: http://catalog-service:8082
+      SUPPLY_BASE_URL: http://supply-service:8083
+      COMMERCE_BASE_URL: http://commerce-service:8084
+      FULFILLMENT_BASE_URL: http://fulfillment-service:8085
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      account-service:
+        condition: service_healthy
+      catalog-service:
+        condition: service_healthy
+      supply-service:
+        condition: service_healthy
+      commerce-service:
+        condition: service_healthy
+      fulfillment-service:
+        condition: service_healthy
+    healthcheck:
+      <<: *http-healthcheck
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+
+volumes:
+  postgres_data:
+  redis_data:
+  maven_cache:

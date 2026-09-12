@@ -1,0 +1,14 @@
+server:
+  address: 127.0.0.1
+  port: 0
+logging:
+  level:
+    root: WARN
+gateway:
+  security:
+    issuer-uri: https://identity.example.test
+    audience: fresveg-gateway
+    jwk-set-uri: https://identity.example.test/jwks
+    allowed-origins: http://client.example.test
+  rate-limit:
+    requests-per-minute: 1000

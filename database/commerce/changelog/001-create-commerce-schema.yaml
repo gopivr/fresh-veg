@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: commerce-001-create-schema
+      author: fresveg
+      logicalFilePath: database/commerce/changelog/001-create-commerce-schema.yaml
+      dbms: postgresql
+      comment: Provision isolated schema, migration owner and runtime login without embedded credentials. No automated rollback after service initialization.
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT count(*) FROM pg_roles WHERE rolname IN ('fresveg_commerce', 'fresveg_commerce_migrator')
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT count(*) FROM pg_namespace WHERE nspname = 'commerce'
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE ROLE fresveg_commerce_migrator LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+              CREATE ROLE fresveg_commerce LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+              CREATE SCHEMA commerce AUTHORIZATION fresveg_commerce_migrator;
+              REVOKE ALL ON SCHEMA commerce FROM PUBLIC;
+              GRANT USAGE ON SCHEMA commerce TO fresveg_commerce;
+              ALTER ROLE fresveg_commerce_migrator SET search_path = commerce;
+              ALTER ROLE fresveg_commerce SET search_path = commerce;
+              ALTER DEFAULT PRIVILEGES FOR ROLE fresveg_commerce_migrator IN SCHEMA commerce REVOKE ALL ON TABLES FROM PUBLIC;
+              ALTER DEFAULT PRIVILEGES FOR ROLE fresveg_commerce_migrator IN SCHEMA commerce REVOKE ALL ON SEQUENCES FROM PUBLIC;
+              ALTER DEFAULT PRIVILEGES FOR ROLE fresveg_commerce_migrator IN SCHEMA commerce REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
+              DO $bootstrap$
+              BEGIN
+                EXECUTE format('GRANT CONNECT ON DATABASE %I TO fresveg_commerce, fresveg_commerce_migrator', current_database());
+              END
+              $bootstrap$;

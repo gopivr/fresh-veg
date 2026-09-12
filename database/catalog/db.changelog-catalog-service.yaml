@@ -1,0 +1,8 @@
+# This branch is excluded from root bootstrap; append owner migrations here.
+databaseChangeLog:
+  - include:
+      file: changelog/002-protect-migration-history.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changelog/003-create-catalog-domain.yaml
+      relativeToChangelogFile: true

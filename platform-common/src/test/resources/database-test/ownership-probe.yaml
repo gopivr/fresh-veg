@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: test-only-ownership-probe
+      author: fresveg-test
+      comment: Disposable privilege probe; never packaged with production migrations.
+      changes:
+        - createTable:
+            tableName: ownership_probe
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: amount
+                  type: NUMERIC(12,2)
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE ownership_probe TO ${runtimeRole}
+      rollback:
+        - dropTable:
+            tableName: ownership_probe

@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: commerce-003-create-carts
+      author: fresveg
+      logicalFilePath: database/commerce/changelog/003-create-carts.yaml
+      dbms: postgresql
+      comment: Create customer-owned carts and items with local constraints and scoped runtime grants.
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "1"
+            sql: SELECT CASE WHEN current_user = 'fresveg_commerce_migrator' AND current_schema() = 'commerce' THEN 1 ELSE 0 END
+      changes:
+        - sqlFile:
+            path: 003-create-carts.sql
+            relativeToChangelogFile: true
+            splitStatements: true
+      rollback:
+        - sqlFile:
+            path: 003-rollback-empty-carts.sql
+            relativeToChangelogFile: true
+            splitStatements: false

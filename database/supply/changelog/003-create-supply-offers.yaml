@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: supply-003-create-offers
+      author: fresveg
+      logicalFilePath: database/supply/changelog/003-create-supply-offers.yaml
+      dbms: postgresql
+      comment: Create the four Supply domain tables, relational constraints, collection indexes, effective prices and least-privilege runtime grants.
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "1"
+            sql: SELECT CASE WHEN current_user = 'fresveg_supply_migrator' AND current_schema() = 'supply' THEN 1 ELSE 0 END
+      changes:
+        - sqlFile:
+            path: 003-create-supply-offers.sql
+            relativeToChangelogFile: true
+            splitStatements: true
+      rollback:
+        - sqlFile:
+            path: 003-rollback-empty-supply-offers.sql
+            relativeToChangelogFile: true
+            splitStatements: false

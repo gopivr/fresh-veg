@@ -1,0 +1,17 @@
+# This branch is excluded from root bootstrap; append owner migrations here.
+databaseChangeLog:
+  - include:
+      file: changelog/002-protect-migration-history.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changelog/003-create-carts.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changelog/004-create-orders.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changelog/005-create-payments.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changelog/006-enable-outbox-publication.yaml
+      relativeToChangelogFile: true

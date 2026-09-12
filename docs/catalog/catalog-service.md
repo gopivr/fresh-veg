@@ -1,0 +1,96 @@
+# Catalog service — Phase 4
+
+Catalog owns reusable product identity, classification, variants, units and images. It does not own vendor offers, pricing, stock or reservations. Account and all other completed implementations remain unchanged.
+
+## Run and authenticate
+
+Build the entire reactor with `mvn clean verify`. Export Catalog's scoped database settings, `OIDC_ISSUER_URI`, `OIDC_JWK_SET_URI`, `OIDC_AUDIENCE` and `ACCOUNT_BASE_URL`. For example, after supplying issuer/JWK and database credentials through the environment:
+
+```sh
+OIDC_AUDIENCE=fresveg-catalog ACCOUNT_BASE_URL=http://localhost:8081 \
+  java -jar catalog-service/target/catalog-service-0.1.0-SNAPSHOT.jar
+```
+
+The default port is 8082 and bind address is localhost. Use `SPRING_PROFILES_ACTIVE=local` for the established local database URL defaults. OIDC and Account settings remain required in both profiles. Deployed issuer/JWK and Account connections must use trusted endpoints and suitable TLS/network controls; local HTTP is supported. No provider or signing credentials are bundled.
+
+Active catalog browsing and category reads are public. Supplied tokens are still validated locally by Spring Security Resource Server: RS256 signature, exact issuer, audience, subject, expiration and timestamp validity, following the established Account settings/default JWT type behavior. Default Spring timestamp tolerance is 60 seconds.
+
+Admin mutations and non-active product access require **Account's stored PLATFORM_ADMIN role** and an active identity. Catalog forwards the validated bearer token and correlation ID to the existing Account `GET /api/v1/accounts/me`. The provider must issue a token accepted by both services (normally both audiences). Catalog never reads Account tables, shares Account JPA classes or trusts a JWT `roles`, `userId` or vendor claim for authority/audit. Account's current profile/status restrictions also apply to this lookup.
+
+Authorization results live only for the current HTTP request, so revocation is checked again on the next request. Missing tokens on write routes return 401; insufficient/revoked authority returns 403. Account denial remains denial. Unavailable or malformed authorization responses fail closed with 503; the client uses a two-second connection timeout and five-second request timeout, with no automatic redirects or retries. Public active reads do not call Account. Health/readiness checks the owned database, not IdP/Account availability.
+
+## Operations
+
+| Method | Path | Behavior |
+| --- | --- | --- |
+| GET | `/api/v1/catalog/products` | Paginated product summaries; defaults to ACTIVE |
+| GET | `/api/v1/catalog/products/{productId}` | Product details, attributes, categories, variants and images |
+| GET | `/api/v1/catalog/categories` | Paginated category records including parentCategoryId |
+| GET | `/api/v1/catalog/categories/{categoryId}/products` | Products directly assigned to the category |
+| POST | `/api/v1/catalog/products` | Admin: create a product aggregate; 201 and Location |
+| PUT | `/api/v1/catalog/products/{productId}` | Admin: replace metadata/children with current version |
+| PATCH | `/api/v1/catalog/products/{productId}` | Admin: change status with current version |
+| POST | `/api/v1/catalog/categories` | Admin: create a category beneath an optional existing parent |
+
+Responses use the existing `data`, `meta.requestId`, `meta.timestamp` envelope. Collections include `pagination.nextCursor`/`hasNext`. Errors use RFC 9457 with `code`, `correlationId` and `instance`. Missing and non-public products return 404 to ordinary readers. Unknown JSON properties, invalid relation/unit references and malformed filters are rejected. No entities are serialized directly.
+
+Product list/category-product parameters:
+
+| Parameter | Semantics |
+| --- | --- |
+| q | Up to 120 characters; PostgreSQL simple-dictionary web search over name, case-insensitive tokens; not substring/autocomplete/fuzzy search |
+| categoryId | Exact direct category relation; the category path supplies this value for its operation |
+| organic | Optional true/false flag |
+| status | ACTIVE by default; DRAFT/ARCHIVED require stored admin authority |
+| sort | `name` (default) or `code`, ascending database order with UUID tie-breaker |
+| attributes | URL-encoded JSON object; product JSONB must contain it (`@>`) |
+| pageSize | 1–100, default 20 |
+| cursor | Opaque nextCursor from the preceding response |
+
+Category traversal uses UUID order. Cursors carry position and a filter fingerprint, and reject use with changed resource/filter/sort values. They are not authorization tokens: all filters and visibility checks are reapplied. Preserve the previous query values; page size may change. Traversal is not a snapshot, so concurrent name/code edits or inserts can move records. Category filtering does not automatically include descendants. Categories form a hierarchy through a local parent FK; new IDs are generated by the server, parents must exist, and there is no reparent mutation in this phase, preventing API-created cycles.
+
+## Product writes
+
+Example POST body (category IDs may be supplied from category creation/listing):
+
+```json
+{
+  "code": "ROMA_TOMATO",
+  "name": "Roma Tomato",
+  "description": "Reusable catalog metadata",
+  "organic": true,
+  "status": "ACTIVE",
+  "attributes": {"origin": "US", "variety": "Roma"},
+  "categoryIds": [],
+  "variants": [
+    {"code": "ROMA_TOMATO_KG", "name": "Kilogram pack", "unitCode": "KG", "quantity": 1.000000, "status": "ACTIVE"}
+  ],
+  "images": []
+}
+```
+
+Codes are uppercase ASCII letters/digits/underscore/hyphen, up to 64 characters, with an alphanumeric first character. Product and variant codes are globally unique in their respective tables. Name is required; description may be null. `organic`, `status`, `attributes` and all three child arrays are required, though arrays may be empty. Attributes must be a JSON object of at most 16 KiB UTF-8, 64 top-level keys and depth 8; no normalized attributes table is needed yet.
+
+At most 50 categories, 50 variants and 20 images may be supplied. Duplicate categories/variant codes are rejected. Units are the seeded vocabulary KG, G, EA, L and ML, with MASS/VOLUME/COUNT dimensions. Positive variant quantity uses NUMERIC(18,6), at most twelve integer and six fractional digits; it describes package/unit metadata, not inventory. Images contain an HTTPS `url` and non-null `altText`; their array order determines position. Catalog stores URL metadata and does not fetch/upload images.
+
+PUT adds a required nonnegative `version` to the POST shape and replaces metadata/classifications/images atomically. Variants match by their immutable code within the product: existing UUIDs are preserved, new codes create new UUIDs, and omitted variants are archived instead of deleted. Reintroducing an archived code reuses its UUID. Variant codes cannot move to another product. Product deletion is not implemented; use DRAFT/ACTIVE/ARCHIVED status. Public ACTIVE product detail includes only active variants; admin mutation responses and authorized non-active detail include archived variants. Classifications/images are mutable owned metadata and are replaced, with new link/image IDs.
+
+PATCH supports exactly `{"version": 0, "status": "ARCHIVED"}` (or another valid product status). Other partial metadata edits are rejected; use PUT. Product version guards the whole aggregate, including child changes; concurrent edits have one winner and return 409 for the stale writer. Reload and reconcile before retrying. Audit actor IDs come from the verified Account response, not the request or JWT UUID claims.
+
+Category POST accepts `code`, `name` and optional `parentCategoryId`. Category/units updates, unit conversion, normalized attribute taxonomy, bulk import, image hosting and catalog deletion are outside this phase.
+
+## Database and contracts
+
+[Catalog changeset 003](../../database/catalog/changelog/003-create-catalog-domain.yaml) adds six tables with UUID keys, audit timestamps/version, local FKs, unique/check constraints and explicit runtime grants. Account audit UUIDs have no cross-schema FK. Five units are reference data; no sample products or categories are seeded.
+
+Indexes follow implemented queries: unique product code; `(status,name,product_id)` and `(status,code,product_id)` for keyset lists; GIN `to_tsvector('simple',name)` for web search; GIN `attributes jsonb_path_ops` for supported containment; category-parent/reverse product-category and product-variant indexes. Existing unique product/category and product/image-position indexes cover forward detail queries. No extra GIN or vendor/stock indexes are added.
+
+Runtime can read units, read/insert categories, read/insert/update products/variants and read/insert/delete classification links/images. It cannot delete products/variants, administer units/categories, change schema/history or access other schemas. Guarded rollback exclusively locks the six tables and refuses once business data exists; empty rollback preserves Phase 2 infrastructure. Populated installations require forward migrations/recovery planning.
+
+[OpenAPI 3.1](../../contracts/openapi/catalog-api.yaml) is generated from the running application during tests as `catalog-service/target/catalog-api.yaml`. `/v3/api-docs` and `.yaml` default off and are public when enabled; local/test profiles default on, overridable with `API_DOCS_ENABLED`. After API changes, run the tests, copy the generated artifact to `contracts/openapi/catalog-api.yaml`, and validate all contracts with `python -m openapi_spec_validator`.
+
+## Validation
+
+`mvn clean verify` runs all existing tests plus Catalog unit, PostgreSQL migration and HTTP tests. Catalog HTTP tests run the **unmodified Account JAR** with its own disposable PostgreSQL database and ephemeral RSA/JWK provider, provision test-only stored admin roles, and verify revocation and external audit identity. This is why the full reactor must build Account before Catalog tests; isolated Catalog verification requires an already-built Account JAR. No production Account changes or shared database queries are used for authorization.
+
+Coverage includes real JWT rejection, public/privileged visibility, hierarchical classifications, name/organic/category/JSONB filtering, both sorts and duplicate-name cursor ties, DTO validation, variant retention, version races, role revocation, unavailable/malformed authorization, baseline upgrade/repeat/rollback and runtime privilege denials. The packaged script additionally checks all six applications on Java 21 in default/local profiles and invokes the real Liquibase bootstrap CLI on an isolated database.

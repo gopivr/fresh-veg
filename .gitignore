@@ -1,0 +1,14 @@
+# Build and local tools
+**/target/
+.idea/
+*.iml
+.DS_Store
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.log
+
+# Python validation helper
+__pycache__/

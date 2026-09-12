@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - include:
+      file: changelog/001-create-supply-schema.yaml
+      relativeToChangelogFile: true
+      contextFilter: "@bootstrap"
+  - include:
+      file: db.changelog-supply-service.yaml
+      relativeToChangelogFile: true
+      contextFilter: "@service"

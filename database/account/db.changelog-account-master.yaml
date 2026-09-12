@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - include:
+      file: changelog/001-create-account-schema.yaml
+      relativeToChangelogFile: true
+      contextFilter: "@bootstrap"
+  - include:
+      file: db.changelog-account-service.yaml
+      relativeToChangelogFile: true
+      contextFilter: "@service"

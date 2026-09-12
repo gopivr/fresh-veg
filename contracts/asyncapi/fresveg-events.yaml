@@ -1,0 +1,140 @@
+asyncapi: 3.0.0
+info:
+  title: FresVeg Domain Events
+  version: 0.1.0
+  description: Versioned FresVeg domain events published from transactional outboxes. Phase 12 implements Commerce publication with no-op/local and Kafka publisher implementations.
+defaultContentType: application/json
+servers:
+  kafka:
+    host: ${KAFKA_BOOTSTRAP_SERVERS}
+    protocol: kafka
+    description: Optional Kafka broker used when commerce.outbox.publisher=kafka.
+channels:
+  fresveg.events.v1:
+    address: fresveg.events.v1
+    messages:
+      OrderCreated:
+        $ref: '#/components/messages/OrderCreated'
+      OrderConfirmed:
+        $ref: '#/components/messages/OrderConfirmed'
+      OrderCancelled:
+        $ref: '#/components/messages/OrderCancelled'
+      InventoryReserved:
+        $ref: '#/components/messages/InventoryReserved'
+      InventoryCommitted:
+        $ref: '#/components/messages/InventoryCommitted'
+      InventoryReleased:
+        $ref: '#/components/messages/InventoryReleased'
+      PaymentAuthorized:
+        $ref: '#/components/messages/PaymentAuthorized'
+      PaymentFailed:
+        $ref: '#/components/messages/PaymentFailed'
+      OrderReadyForFulfillment:
+        $ref: '#/components/messages/OrderReadyForFulfillment'
+      ShipmentCreated:
+        $ref: '#/components/messages/ShipmentCreated'
+      ShipmentDelivered:
+        $ref: '#/components/messages/ShipmentDelivered'
+operations:
+  publishCommerceEvents:
+    action: send
+    channel:
+      $ref: '#/channels/fresveg.events.v1'
+    summary: Commerce publishes committed order and payment lifecycle events from commerce.outbox_events.
+components:
+  messages:
+    OrderCreated:
+      name: OrderCreated
+      payload:
+        $ref: '#/components/schemas/OrderEventEnvelope'
+    OrderConfirmed:
+      name: OrderConfirmed
+      payload:
+        $ref: '#/components/schemas/OrderEventEnvelope'
+    OrderCancelled:
+      name: OrderCancelled
+      payload:
+        $ref: '#/components/schemas/OrderEventEnvelope'
+    InventoryReserved:
+      name: InventoryReserved
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'
+    InventoryCommitted:
+      name: InventoryCommitted
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'
+    InventoryReleased:
+      name: InventoryReleased
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'
+    PaymentAuthorized:
+      name: PaymentAuthorized
+      payload:
+        $ref: '#/components/schemas/OrderEventEnvelope'
+    PaymentFailed:
+      name: PaymentFailed
+      payload:
+        $ref: '#/components/schemas/OrderEventEnvelope'
+    OrderReadyForFulfillment:
+      name: OrderReadyForFulfillment
+      payload:
+        $ref: '#/components/schemas/OrderEventEnvelope'
+    ShipmentCreated:
+      name: ShipmentCreated
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'
+    ShipmentDelivered:
+      name: ShipmentDelivered
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'
+  schemas:
+    EventEnvelope:
+      type: object
+      required: [eventId, eventType, eventVersion, aggregateId, occurredAt, correlationId, payload]
+      additionalProperties: false
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+        eventVersion:
+          type: integer
+          minimum: 1
+        aggregateId:
+          type: string
+          format: uuid
+        occurredAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        payload:
+          type: object
+    OrderEventEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EventEnvelope'
+        - type: object
+          properties:
+            payload:
+              $ref: '#/components/schemas/OrderEventPayload'
+    OrderEventPayload:
+      type: object
+      required: [orderId, customerId, status, currency, grandTotal]
+      additionalProperties: false
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        grandTotal:
+          type: number

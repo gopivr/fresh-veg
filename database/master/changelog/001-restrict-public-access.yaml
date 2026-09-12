@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: platform-001-restrict-public-access
+      author: fresveg
+      logicalFilePath: database/master/changelog/001-restrict-public-access.yaml
+      dbms: postgresql
+      comment: Restrict the dedicated FresVeg database before granting explicit service access. Forward-only; prior grants cannot be reconstructed safely.
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              REVOKE ALL ON SCHEMA public FROM PUBLIC;
+              DO $bootstrap$
+              BEGIN
+                EXECUTE format('REVOKE ALL ON DATABASE %I FROM PUBLIC', current_database());
+              END
+              $bootstrap$;

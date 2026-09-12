@@ -1,0 +1,3676 @@
+openapi: 3.1.0
+info:
+  title: FresVeg Supply API
+  description: Vendor listings and effective unit prices. Currency and quantity are
+    explicit; tier prices apply to the whole quantity. Vendor selection requires live
+    Account membership; writes require VENDOR_ADMIN. Offer browsing does not reserve
+    stock. Inventory mutations and service reservations use a separate audited stock
+    aggregate.
+  version: 0.1.0
+servers:
+- url: /
+paths:
+  /api/v1/supply/vendor/locations/{locationId}:
+    put:
+      tags:
+      - Supply offers
+      summary: Vendor administrator updates an owned location using its version
+      operationId: replaceVendorLocation
+      parameters:
+      - name: locationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLocationRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseLocationResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "409":
+          description: "Duplicate resource, stale version, conflicting request intent/state,\
+            \ or insufficient eligible inventory"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/supply/vendor/listings/{listingId}:
+    get:
+      tags:
+      - Supply offers
+      summary: Read an owned listing including configured future and expired schedules
+      operationId: getVendorListing
+      parameters:
+      - name: listingId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseListingResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+    put:
+      tags:
+      - Supply offers
+      summary: Replace owned listing metadata and configured schedules using the current
+        version
+      operationId: replaceVendorListing
+      parameters:
+      - name: listingId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateListingRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseListingResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "409":
+          description: "Duplicate resource, stale version, conflicting request intent/state,\
+            \ or insufficient eligible inventory"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/supply/vendor/inventory/{inventoryId}:
+    put:
+      tags:
+      - inventory-controller
+      summary: Apply a versioned batch correction with an immutable ledger entry
+      operationId: adjustInventory
+      parameters:
+      - name: inventoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustInventoryRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseInventoryResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "409":
+          description: "Duplicate resource, stale version, conflicting request intent/state,\
+            \ or insufficient eligible inventory"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+  /internal/v1/inventory/reservations:
+    post:
+      tags:
+      - inventory-controller
+      summary: Configured service reserves eligible stock with an idempotent external
+        reference
+      operationId: reserveInventory
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReserveInventoryRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseReservationResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "409":
+          description: "Duplicate resource, stale version, conflicting request intent/state,\
+            \ or insufficient eligible inventory"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+  /internal/v1/inventory/reservations/{reservationId}/release:
+    post:
+      tags:
+      - inventory-controller
+      summary: Release an owned active reservation once
+      operationId: releaseInventoryReservation
+      parameters:
+      - name: reservationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseReservationResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "409":
+          description: "Duplicate resource, stale version, conflicting request intent/state,\
+            \ or insufficient eligible inventory"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+  /internal/v1/inventory/reservations/{reservationId}/commit:
+    post:
+      tags:
+      - inventory-controller
+      summary: Commit an owned active reservation once; expired reservations are released
+      operationId: commitInventoryReservation
+      parameters:
+      - name: reservationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseReservationResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "409":
+          description: "Duplicate resource, stale version, conflicting request intent/state,\
+            \ or insufficient eligible inventory"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+  /internal/v1/inventory/order-reservations:
+    post:
+      tags:
+      - inventory-controller
+      summary: Reserve a listing with batch eligibility through the delivery horizon
+      operationId: reserveOrderInventory
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderReservationRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseReservationResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/supply/vendor/locations:
+    get:
+      tags:
+      - Supply offers
+      summary: List locations for a verified vendor
+      operationId: listVendorLocations
+      parameters:
+      - name: vendorId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: cursor
+        in: query
+        description: Opaque nextCursor from the preceding page; preserve filters and
+          sort
+        required: false
+        schema:
+          type: string
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponseLocationResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Supply offers
+      summary: Vendor administrator creates an owned location
+      operationId: createVendorLocation
+      parameters:
+      - name: vendorId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLocationRequest"
+        required: true
+      responses:
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "409":
+          description: "Duplicate resource, stale version, conflicting request intent/state,\
+            \ or insufficient eligible inventory"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "201":
+          description: Resource created
+          headers:
+            Location:
+              description: Created resource path
+              schema:
+                type: string
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseLocationResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/supply/vendor/listings:
+    get:
+      tags:
+      - Supply offers
+      summary: List listings for a vendor selected from verified memberships
+      operationId: listVendorListings
+      parameters:
+      - name: vendorId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: cursor
+        in: query
+        description: Opaque nextCursor from the preceding page; preserve filters and
+          sort
+        required: false
+        schema:
+          type: string
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponseListingSummary"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Supply offers
+      summary: Vendor administrator creates an owned listing and price schedules
+      operationId: createVendorListing
+      parameters:
+      - name: vendorId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateListingRequest"
+        required: true
+      responses:
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "409":
+          description: "Duplicate resource, stale version, conflicting request intent/state,\
+            \ or insufficient eligible inventory"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "201":
+          description: Resource created
+          headers:
+            Location:
+              description: Created resource path
+              schema:
+                type: string
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseListingResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/supply/vendor/inventory:
+    get:
+      tags:
+      - inventory-controller
+      summary: List inventory for a verified vendor
+      operationId: listInventory
+      parameters:
+      - name: vendorId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: cursor
+        in: query
+        description: Opaque nextCursor from the preceding page; preserve filters and
+          sort
+        required: false
+        schema:
+          type: string
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponseInventoryResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - inventory-controller
+      summary: Initialize zero stock for an owned listing; repeated initialization
+        returns existing inventory
+      operationId: initializeInventory
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitializeInventoryRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseInventoryResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "409":
+          description: "Duplicate resource, stale version, conflicting request intent/state,\
+            \ or insufficient eligible inventory"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/supply/vendor/inventory/{inventoryId}/batches:
+    get:
+      tags:
+      - inventory-controller
+      summary: List owned batch metadata and quantities
+      operationId: listInventoryBatches
+      parameters:
+      - name: inventoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: cursor
+        in: query
+        description: Opaque nextCursor from the preceding page; preserve filters and
+          sort
+        required: false
+        schema:
+          type: string
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponseBatchResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - inventory-controller
+      summary: Receive a new batch and record its stock movement atomically
+      operationId: receiveInventoryBatch
+      parameters:
+      - name: inventoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceiveBatchRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseInventoryResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "409":
+          description: "Duplicate resource, stale version, conflicting request intent/state,\
+            \ or insufficient eligible inventory"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/supply/vendor/inventory/{inventoryId}/adjustments:
+    post:
+      tags:
+      - inventory-controller
+      summary: Record a signed batch correction using the current inventory version
+      operationId: recordInventoryAdjustment
+      parameters:
+      - name: inventoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustInventoryRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseInventoryResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "409":
+          description: "Duplicate resource, stale version, conflicting request intent/state,\
+            \ or insufficient eligible inventory"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+  /internal/v1/inventory/reservations/by-reference:
+    get:
+      tags:
+      - inventory-controller
+      summary: Recover only the calling service's reservation by reference
+      operationId: getInventoryReservationByReference
+      parameters:
+      - name: externalReference
+        in: query
+        required: true
+        schema:
+          type: string
+          maxLength: 160
+          minLength: 1
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseReservationResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/supply/vendor/inventory/{inventoryId}/transactions:
+    get:
+      tags:
+      - inventory-controller
+      summary: Read the append-only stock and reservation ledger
+      operationId: listInventoryTransactions
+      parameters:
+      - name: inventoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: cursor
+        in: query
+        description: Opaque nextCursor from the preceding page; preserve filters and
+          sort
+        required: false
+        schema:
+          type: string
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponseTransactionResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+      security:
+      - bearerAuth: []
+  /api/v1/supply/products/{productId}/offers:
+    get:
+      tags:
+      - Supply offers
+      summary: Resolve current currency and quantity prices for active product offers
+      operationId: listProductOffers
+      parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: variantId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: currency
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: quantity
+        in: query
+        required: true
+        schema:
+          type: number
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: cursor
+        in: query
+        description: Opaque nextCursor from the preceding page; preserve filters and
+          sort
+        required: false
+        schema:
+          type: string
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponseOfferResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "409":
+          description: "Duplicate resource, stale version, conflicting request intent/state,\
+            \ or insufficient eligible inventory"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+  /api/v1/supply/listings/{listingId}:
+    get:
+      tags:
+      - Supply offers
+      summary: Read active listing metadata and currently effective price schedules
+      operationId: getListing
+      parameters:
+      - name: listingId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseListingResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+  /api/v1/supply/listings/{listingId}/availability:
+    get:
+      tags:
+      - listing-availability-controller
+      summary: Check eligible unreserved stock through a requested time without creating
+        a reservation
+      operationId: checkListingAvailability
+      parameters:
+      - name: listingId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: quantity
+        in: query
+        required: true
+        schema:
+          type: number
+      - name: requiredUntil
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: X-Correlation-ID
+        in: header
+        description: Optional safe request ID; invalid values are replaced
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseAvailabilityResponse"
+        "400":
+          description: "Invalid request, cursor or page size"
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "401":
+          description: Missing or invalid bearer token
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "403":
+          description: Required verified vendor role or configured service subject/scope
+            is missing
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "500":
+          description: Unexpected failure
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "503":
+          description: Account or Catalog dependency is unavailable; validation fails
+            closed
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+        "404":
+          description: Resource does not exist or is not visible to this caller
+          headers:
+            X-Correlation-ID:
+              description: Validated incoming ID or generated UUID
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/SupplyProblem"
+components:
+  schemas:
+    UpdateLocationRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          minLength: 1
+          pattern: "[A-Z0-9][A-Z0-9_-]{0,63}"
+        name:
+          type: string
+          maxLength: 160
+          minLength: 0
+        line1:
+          type: string
+          maxLength: 200
+          minLength: 0
+        city:
+          type: string
+          maxLength: 100
+          minLength: 0
+        postalCode:
+          type: string
+          maxLength: 20
+          minLength: 0
+        countryCode:
+          type: string
+          minLength: 1
+          pattern: "[A-Z]{2}"
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+        version:
+          type: integer
+          format: int64
+      required:
+      - city
+      - code
+      - countryCode
+      - line1
+      - name
+      - postalCode
+      - status
+      - version
+    ApiResponseLocationResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/LocationResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    LocationResponse:
+      type: object
+      properties:
+        locationId:
+          type: string
+          format: uuid
+        vendorId:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        line1:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        countryCode:
+          type: string
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+        version:
+          type: integer
+          format: int64
+      required:
+      - city
+      - code
+      - countryCode
+      - line1
+      - locationId
+      - name
+      - postalCode
+      - status
+      - vendorId
+      - version
+    Meta:
+      type: object
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+      - requestId
+      - timestamp
+    PriceRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        priceId:
+          type:
+          - string
+          - "null"
+          format: uuid
+        currency:
+          type: string
+          minLength: 1
+          pattern: "[A-Z]{3}"
+        unitPrice:
+          type: number
+          minimum: 0
+        minQuantity:
+          type: number
+          minimum: 0
+        validFrom:
+          type: string
+          format: date-time
+        validTo:
+          type:
+          - string
+          - "null"
+          format: date-time
+        tiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TierRequest"
+          maxItems: 50
+          minItems: 0
+      required:
+      - currency
+      - minQuantity
+      - tiers
+      - unitPrice
+      - validFrom
+    TierRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        minQuantity:
+          type: number
+          minimum: 0
+        unitPrice:
+          type: number
+          minimum: 0
+      required:
+      - minQuantity
+      - unitPrice
+    UpdateListingRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        locationId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        vendorSku:
+          type: string
+          minLength: 1
+          pattern: "[A-Z0-9][A-Z0-9_-]{0,63}"
+        uomCode:
+          type: string
+          maxLength: 16
+          minLength: 0
+        minimumOrderQuantity:
+          type: number
+          minimum: 0
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - ACTIVE
+          - ARCHIVED
+        attributes:
+          type: object
+          additionalProperties: {}
+        prices:
+          type: array
+          items:
+            $ref: "#/components/schemas/PriceRequest"
+          maxItems: 50
+          minItems: 0
+        version:
+          type: integer
+          format: int64
+      required:
+      - attributes
+      - locationId
+      - minimumOrderQuantity
+      - prices
+      - productId
+      - status
+      - uomCode
+      - variantId
+      - vendorSku
+      - version
+    ApiResponseListingResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ListingResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    ListingResponse:
+      type: object
+      properties:
+        listingId:
+          type: string
+          format: uuid
+        vendorId:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        vendorSku:
+          type: string
+        uomCode:
+          type: string
+        minimumOrderQuantity:
+          type: number
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - ACTIVE
+          - ARCHIVED
+        attributes:
+          type: object
+          additionalProperties: {}
+        prices:
+          type: array
+          items:
+            $ref: "#/components/schemas/PriceResponse"
+        version:
+          type: integer
+          format: int64
+      required:
+      - attributes
+      - listingId
+      - locationId
+      - minimumOrderQuantity
+      - prices
+      - productId
+      - status
+      - uomCode
+      - variantId
+      - vendorId
+      - vendorSku
+      - version
+    PriceResponse:
+      type: object
+      properties:
+        priceId:
+          type: string
+          format: uuid
+        currency:
+          type: string
+        unitPrice:
+          type: number
+        minQuantity:
+          type: number
+        validFrom:
+          type: string
+          format: date-time
+        validTo:
+          type:
+          - string
+          - "null"
+          format: date-time
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - CANCELLED
+        tiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TierResponse"
+      required:
+      - currency
+      - minQuantity
+      - priceId
+      - status
+      - tiers
+      - unitPrice
+      - validFrom
+      - validTo
+    TierResponse:
+      type: object
+      properties:
+        tierId:
+          type:
+          - string
+          - "null"
+          format: uuid
+        minQuantity:
+          type: number
+        unitPrice:
+          type: number
+      required:
+      - minQuantity
+      - tierId
+      - unitPrice
+    AdjustInventoryRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+        batchId:
+          type: string
+          format: uuid
+        quantityDelta:
+          type: number
+        reason:
+          type: string
+          maxLength: 240
+          minLength: 0
+      required:
+      - batchId
+      - quantityDelta
+      - reason
+      - version
+    ApiResponseInventoryResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/InventoryResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    InventoryResponse:
+      type: object
+      properties:
+        inventoryId:
+          type: string
+          format: uuid
+        listingId:
+          type: string
+          format: uuid
+        quantityOnHand:
+          type: number
+        reservedQuantity:
+          type: number
+        availableQuantity:
+          type: number
+        version:
+          type: integer
+          format: int64
+      required:
+      - availableQuantity
+      - inventoryId
+      - listingId
+      - quantityOnHand
+      - reservedQuantity
+      - version
+    ReserveInventoryRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        inventoryId:
+          type: string
+          format: uuid
+        externalReference:
+          type: string
+          maxLength: 160
+          minLength: 0
+        quantity:
+          type: number
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+      - expiresAt
+      - externalReference
+      - inventoryId
+      - quantity
+    ApiResponseReservationResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ReservationResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    ReservationResponse:
+      type: object
+      properties:
+        reservationId:
+          type: string
+          format: uuid
+        inventoryId:
+          type: string
+          format: uuid
+        externalReference:
+          type: string
+        quantity:
+          type: number
+        status:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          format: int64
+      required:
+      - expiresAt
+      - externalReference
+      - inventoryId
+      - quantity
+      - reservationId
+      - status
+      - version
+    OrderReservationRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        listingId:
+          type: string
+          format: uuid
+        externalReference:
+          type: string
+          maxLength: 160
+          minLength: 0
+        quantity:
+          type: number
+        expiresAt:
+          type: string
+          format: date-time
+        requiredUntil:
+          type: string
+          format: date-time
+      required:
+      - expiresAt
+      - externalReference
+      - listingId
+      - quantity
+      - requiredUntil
+    CreateLocationRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          minLength: 1
+          pattern: "[A-Z0-9][A-Z0-9_-]{0,63}"
+        name:
+          type: string
+          maxLength: 160
+          minLength: 0
+        line1:
+          type: string
+          maxLength: 200
+          minLength: 0
+        city:
+          type: string
+          maxLength: 100
+          minLength: 0
+        postalCode:
+          type: string
+          maxLength: 20
+          minLength: 0
+        countryCode:
+          type: string
+          minLength: 1
+          pattern: "[A-Z]{2}"
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+      required:
+      - city
+      - code
+      - countryCode
+      - line1
+      - name
+      - postalCode
+      - status
+    CreateListingRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        locationId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        vendorSku:
+          type: string
+          minLength: 1
+          pattern: "[A-Z0-9][A-Z0-9_-]{0,63}"
+        uomCode:
+          type: string
+          maxLength: 16
+          minLength: 0
+        minimumOrderQuantity:
+          type: number
+          minimum: 0
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - ACTIVE
+          - ARCHIVED
+        attributes:
+          type: object
+          additionalProperties: {}
+        prices:
+          type: array
+          items:
+            $ref: "#/components/schemas/PriceRequest"
+          maxItems: 50
+          minItems: 0
+      required:
+      - attributes
+      - locationId
+      - minimumOrderQuantity
+      - prices
+      - productId
+      - status
+      - uomCode
+      - variantId
+      - vendorSku
+    InitializeInventoryRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        listingId:
+          type: string
+          format: uuid
+      required:
+      - listingId
+    ReceiveBatchRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+        batchNumber:
+          type: string
+          maxLength: 64
+          minLength: 0
+        harvestDate:
+          type:
+          - string
+          - "null"
+          format: date
+        receivedDate:
+          type: string
+          format: date
+        bestBeforeDate:
+          type:
+          - string
+          - "null"
+          format: date
+        expiryDate:
+          type:
+          - string
+          - "null"
+          format: date
+        origin:
+          type: string
+          maxLength: 160
+          minLength: 0
+        grade:
+          type: string
+          maxLength: 64
+          minLength: 0
+        certificationData:
+          type: object
+          additionalProperties:
+            type: string
+        quantity:
+          type: number
+      required:
+      - batchNumber
+      - certificationData
+      - grade
+      - origin
+      - quantity
+      - receivedDate
+      - version
+    CollectionResponseLocationResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocationResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+      - pagination
+    Pagination:
+      type: object
+      properties:
+        nextCursor:
+          type:
+          - string
+          - "null"
+        hasNext:
+          type: boolean
+      required:
+      - hasNext
+      - nextCursor
+    CollectionResponseListingSummary:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ListingSummary"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+      - pagination
+    ListingSummary:
+      type: object
+      properties:
+        listingId:
+          type: string
+          format: uuid
+        vendorId:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        vendorSku:
+          type: string
+        uomCode:
+          type: string
+        minimumOrderQuantity:
+          type: number
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - ACTIVE
+          - ARCHIVED
+        version:
+          type: integer
+          format: int64
+      required:
+      - listingId
+      - locationId
+      - minimumOrderQuantity
+      - productId
+      - status
+      - uomCode
+      - variantId
+      - vendorId
+      - vendorSku
+      - version
+    CollectionResponseInventoryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/InventoryResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+      - pagination
+    CollectionResponseTransactionResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+      - pagination
+    TransactionResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        inventoryId:
+          type: string
+          format: uuid
+        batchId:
+          type: string
+          format: uuid
+        reservationId:
+          type:
+          - string
+          - "null"
+          format: uuid
+        kind:
+          type: string
+        quantityDelta:
+          type: number
+        reservedDelta:
+          type: number
+        reason:
+          type: string
+      required:
+      - batchId
+      - inventoryId
+      - kind
+      - quantityDelta
+      - reason
+      - reservationId
+      - reservedDelta
+      - transactionId
+    BatchResponse:
+      type: object
+      properties:
+        batchId:
+          type: string
+          format: uuid
+        inventoryId:
+          type: string
+          format: uuid
+        batchNumber:
+          type: string
+        harvestDate:
+          type:
+          - string
+          - "null"
+          format: date
+        receivedDate:
+          type: string
+          format: date
+        bestBeforeDate:
+          type:
+          - string
+          - "null"
+          format: date
+        expiryDate:
+          type:
+          - string
+          - "null"
+          format: date
+        origin:
+          type: string
+        grade:
+          type: string
+        certificationData:
+          type: object
+          additionalProperties:
+            type: string
+        quantityReceived:
+          type: number
+        quantityRemaining:
+          type: number
+        reservedQuantity:
+          type: number
+        status:
+          type: string
+        version:
+          type: integer
+          format: int64
+      required:
+      - batchId
+      - batchNumber
+      - bestBeforeDate
+      - certificationData
+      - expiryDate
+      - grade
+      - harvestDate
+      - inventoryId
+      - origin
+      - quantityReceived
+      - quantityRemaining
+      - receivedDate
+      - reservedQuantity
+      - status
+      - version
+    CollectionResponseBatchResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BatchResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+      - pagination
+    CollectionResponseOfferResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/OfferResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+      - pagination
+    OfferResponse:
+      type: object
+      properties:
+        listingId:
+          type: string
+          format: uuid
+        vendorId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        uomCode:
+          type: string
+        minimumOrderQuantity:
+          type: number
+        quantity:
+          type: number
+        currency:
+          type: string
+        unitPrice:
+          type: number
+        priceId:
+          type: string
+          format: uuid
+        tierId:
+          type:
+          - string
+          - "null"
+          format: uuid
+        validFrom:
+          type: string
+          format: date-time
+        validTo:
+          type:
+          - string
+          - "null"
+          format: date-time
+        evaluatedAt:
+          type: string
+          format: date-time
+        listingVersion:
+          type: integer
+          format: int64
+      required:
+      - currency
+      - evaluatedAt
+      - listingId
+      - listingVersion
+      - minimumOrderQuantity
+      - priceId
+      - productId
+      - quantity
+      - tierId
+      - unitPrice
+      - uomCode
+      - validFrom
+      - validTo
+      - variantId
+      - vendorId
+    ApiResponseAvailabilityResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AvailabilityResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+      - data
+      - meta
+    AvailabilityResponse:
+      type: object
+      properties:
+        listingId:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+        requiredUntil:
+          type: string
+          format: date-time
+        available:
+          type: boolean
+        checkedAt:
+          type: string
+          format: date-time
+      required:
+      - available
+      - checkedAt
+      - listingId
+      - quantity
+      - requiredUntil
+    SupplyProblem:
+      type: object
+      description: RFC 9457 problem with a stable code and request correlation ID.
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+        correlationId:
+          type: string
+      required:
+      - code
+      - correlationId
+      - detail
+      - instance
+      - status
+      - title
+      - type
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: "RS256 access token from the configured issuer and audience, with\
+        \ sub and exp. Vendor authority is verified through Account /me and paginated\
+        \ vendor memberships. Vendor tokens must also be accepted by Account. Internal\
+        \ reservation operations require an explicitly configured service subject\
+        \ and inventory.reserve scope."
+      scheme: bearer
+      bearerFormat: JWT

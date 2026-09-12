@@ -1,0 +1,72 @@
+spring:
+  application:
+    name: api-gateway
+  main:
+    banner-mode: "off"
+  jackson:
+    time-zone: UTC
+    property-naming-strategy: LOWER_CAMEL_CASE
+  lifecycle:
+    timeout-per-shutdown-phase: ${SHUTDOWN_TIMEOUT:20s}
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: account-public
+              uri: ${ACCOUNT_BASE_URL:http://127.0.0.1:8081}
+              predicates:
+                - Path=/api/v1/accounts/**
+            - id: catalog-public
+              uri: ${CATALOG_BASE_URL:http://127.0.0.1:8082}
+              predicates:
+                - Path=/api/v1/catalog/**
+            - id: supply-public
+              uri: ${SUPPLY_BASE_URL:http://127.0.0.1:8083}
+              predicates:
+                - Path=/api/v1/supply/**
+            - id: commerce-public
+              uri: ${COMMERCE_BASE_URL:http://127.0.0.1:8084}
+              predicates:
+                - Path=/api/v1/carts/**,/api/v1/carts,/api/v1/checkout/preview,/api/v1/orders/**,/api/v1/orders,/api/v1/vendor/orders/**,/api/v1/vendor/orders
+            - id: fulfillment-public
+              uri: ${FULFILLMENT_BASE_URL:http://127.0.0.1:8085}
+              predicates:
+                - Path=/api/v1/fulfillment/**,/api/v1/fulfillments/**
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics
+      discovery:
+        enabled: false
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: ${OTEL_TRACES_SAMPLER_PROBABILITY:1.0}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+logging:
+  structured:
+    format:
+      console: ${LOG_FORMAT:ecs}
+gateway:
+  security:
+    issuer-uri: ${OIDC_ISSUER_URI:https://identity.example.test}
+    audience: ${OIDC_AUDIENCE:fresveg-gateway}
+    jwk-set-uri: ${OIDC_JWK_SET_URI:https://identity.example.test/jwks}
+    allowed-origins: ${GATEWAY_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+  rate-limit:
+    requests-per-minute: ${GATEWAY_RATE_LIMIT_PER_MINUTE:600}

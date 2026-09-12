@@ -1,0 +1,11 @@
+# Activate with SPRING_PROFILES_ACTIVE=local after database bootstrap and credential provisioning.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:fresveg}}
+logging:
+  level:
+    com.fresveg: ${FRESVEG_LOG_LEVEL:DEBUG}
+
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:true}

@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: account-001-create-schema
+      author: fresveg
+      logicalFilePath: database/account/changelog/001-create-account-schema.yaml
+      dbms: postgresql
+      comment: Provision isolated schema, migration owner and runtime login without embedded credentials. No automated rollback after service initialization.
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT count(*) FROM pg_roles WHERE rolname IN ('fresveg_account', 'fresveg_account_migrator')
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT count(*) FROM pg_namespace WHERE nspname = 'account'
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE ROLE fresveg_account_migrator LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+              CREATE ROLE fresveg_account LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+              CREATE SCHEMA account AUTHORIZATION fresveg_account_migrator;
+              REVOKE ALL ON SCHEMA account FROM PUBLIC;
+              GRANT USAGE ON SCHEMA account TO fresveg_account;
+              ALTER ROLE fresveg_account_migrator SET search_path = account;
+              ALTER ROLE fresveg_account SET search_path = account;
+              ALTER DEFAULT PRIVILEGES FOR ROLE fresveg_account_migrator IN SCHEMA account REVOKE ALL ON TABLES FROM PUBLIC;
+              ALTER DEFAULT PRIVILEGES FOR ROLE fresveg_account_migrator IN SCHEMA account REVOKE ALL ON SEQUENCES FROM PUBLIC;
+              ALTER DEFAULT PRIVILEGES FOR ROLE fresveg_account_migrator IN SCHEMA account REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
+              DO $bootstrap$
+              BEGIN
+                EXECUTE format('GRANT CONNECT ON DATABASE %I TO fresveg_account, fresveg_account_migrator', current_database());
+              END
+              $bootstrap$;

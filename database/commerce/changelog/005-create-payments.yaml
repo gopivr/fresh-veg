@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: commerce-005-create-payments
+      author: fresveg
+      logicalFilePath: database/commerce/changelog/005-create-payments.yaml
+      dbms: postgresql
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "1"
+            sql: SELECT CASE WHEN current_user = 'fresveg_commerce_migrator' AND current_schema() = 'commerce' THEN 1 ELSE 0 END
+      changes:
+        - sqlFile:
+            path: 005-create-payments.sql
+            relativeToChangelogFile: true
+            splitStatements: true
+      rollback:
+        - sqlFile:
+            path: 005-rollback-empty-payments.sql
+            relativeToChangelogFile: true
+            splitStatements: false

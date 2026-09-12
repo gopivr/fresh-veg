@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: account-003-create-domain
+      author: fresveg
+      logicalFilePath: database/account/changelog/003-create-account-domain.yaml
+      dbms: postgresql
+      comment: Create the eight Account domain tables, relational constraints, collection indexes, system roles and least-privilege runtime grants.
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "1"
+            sql: SELECT CASE WHEN current_user = 'fresveg_account_migrator' AND current_schema() = 'account' THEN 1 ELSE 0 END
+      changes:
+        - sqlFile:
+            path: 003-create-account-domain.sql
+            relativeToChangelogFile: true
+            splitStatements: true
+      rollback:
+        - sqlFile:
+            path: 003-rollback-empty-account-domain.sql
+            relativeToChangelogFile: true
+            splitStatements: false

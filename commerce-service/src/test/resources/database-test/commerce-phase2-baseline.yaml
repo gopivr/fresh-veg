@@ -1,0 +1,3 @@
+databaseChangeLog:
+  - include:
+      file: database/commerce/changelog/002-protect-migration-history.yaml

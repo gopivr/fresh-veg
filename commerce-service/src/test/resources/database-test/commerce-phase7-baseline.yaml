@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: database/commerce/changelog/002-protect-migration-history.yaml
+  - include:
+      file: database/commerce/changelog/003-create-carts.yaml

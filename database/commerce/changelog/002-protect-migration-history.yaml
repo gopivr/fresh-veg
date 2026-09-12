@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: commerce-002-protect-migration-history
+      author: fresveg
+      logicalFilePath: database/commerce/changelog/002-protect-migration-history.yaml
+      dbms: postgresql
+      comment: Keep Liquibase history and lock records inaccessible to application credentials. Forward-only security baseline.
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "1"
+            sql: SELECT CASE WHEN current_user = 'fresveg_commerce_migrator' AND current_schema() = 'commerce' THEN 1 ELSE 0 END
+      changes:
+        - sql:
+            sql: REVOKE ALL ON TABLE commerce.databasechangelog, commerce.databasechangeloglock FROM fresveg_commerce

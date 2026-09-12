@@ -1,0 +1,10 @@
+server:
+  address: 127.0.0.1
+  port: 0
+logging:
+  level:
+    root: WARN
+
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:true}
