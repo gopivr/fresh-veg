@@ -2,10 +2,22 @@
 spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:fresveg}}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:091653}
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:false}
 logging:
   level:
     com.fresveg: ${FRESVEG_LOG_LEVEL:DEBUG}
 
 springdoc:
   api-docs:
-    enabled: true
+    enabled: ${API_DOCS_ENABLED:true}
+
+fulfillment:
+  account-base-url: ${ACCOUNT_BASE_URL:http://localhost:8081}
+  commerce-base-url: ${COMMERCE_BASE_URL:http://localhost:8084}
+  security:
+    issuer-uri: ${OIDC_ISSUER_URI:https://identity.example.test}
+    audience: ${OIDC_AUDIENCE:fresveg-fulfillment}
+    jwk-set-uri: ${OIDC_JWK_SET_URI:https://identity.example.test/.well-known/jwks.json}

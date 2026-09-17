@@ -2,3 +2,7 @@
 logging:
   level:
     com.fresveg: ${FRESVEG_LOG_LEVEL:DEBUG}
+gateway:
+  rate-limit:
+    requests-per-minute: 50000
+

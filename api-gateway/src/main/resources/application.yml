@@ -33,6 +33,10 @@ spring:
               uri: ${FULFILLMENT_BASE_URL:http://127.0.0.1:8085}
               predicates:
                 - Path=/api/v1/fulfillment/**,/api/v1/fulfillments/**
+            - id: farms-service
+              uri: ${FARMS_BASE_URL:http://127.0.0.1:5000}
+              predicates:
+                - Path=/api/farms/**,/api/farms
 server:
   address: ${SERVER_ADDRESS:127.0.0.1}
   port: ${SERVER_PORT:8080}
@@ -67,6 +71,6 @@ gateway:
     issuer-uri: ${OIDC_ISSUER_URI:https://identity.example.test}
     audience: ${OIDC_AUDIENCE:fresveg-gateway}
     jwk-set-uri: ${OIDC_JWK_SET_URI:https://identity.example.test/jwks}
-    allowed-origins: ${GATEWAY_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+    allowed-origins: ${GATEWAY_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}
   rate-limit:
     requests-per-minute: ${GATEWAY_RATE_LIMIT_PER_MINUTE:600}

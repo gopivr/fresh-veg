@@ -85,6 +85,7 @@ public class FoundationConfiguration {
                         .pathMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/liveness",
                                 "/actuator/health/readiness", "/actuator/prometheus").permitAll()
                         .pathMatchers("/internal/**").permitAll()
+                        .pathMatchers("/api/farms/**", "/api/farms").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/catalog/products", "/api/v1/catalog/products/*",
                                 "/api/v1/catalog/categories", "/api/v1/catalog/categories/*/products",
                                 "/api/v1/supply/products/*/offers", "/api/v1/supply/listings/*",

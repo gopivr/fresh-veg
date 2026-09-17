@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 01-unified-schemas-and-roles
+      author: fresveg
+      runOnChange: true
+      comment: "Create all service schemas (account, catalog, supply, commerce, fulfillment) and provision roles safely."
+      changes:
+        - sqlFile:
+            path: unified/01-schemas-and-roles.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+  - changeSet:
+      id: 02-unified-all-service-tables
+      author: fresveg
+      runOnChange: true
+      comment: "Create all 37 domain tables across 5 microservices with constraints, indexes, and audit columns."
+      changes:
+        - sqlFile:
+            path: unified/02-all-service-tables.sql
+            relativeToChangelogFile: true
+            splitStatements: false
