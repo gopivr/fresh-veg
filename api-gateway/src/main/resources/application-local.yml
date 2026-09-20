@@ -3,6 +3,10 @@ logging:
   level:
     com.fresveg: ${FRESVEG_LOG_LEVEL:DEBUG}
 gateway:
+  security:
+    issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8180/realms/fresveg}
+    audience: ${OIDC_AUDIENCE:fresveg-gateway}
+    jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8180/realms/fresveg/protocol/openid-connect/certs}
   rate-limit:
     requests-per-minute: 50000
 

@@ -19,6 +19,6 @@ commerce:
   catalog-base-url: ${CATALOG_BASE_URL:http://localhost:8082}
   supply-base-url: ${SUPPLY_BASE_URL:http://localhost:8083}
   security:
-    issuer-uri: ${OIDC_ISSUER_URI:https://identity.example.test}
+    issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8180/realms/fresveg}
     audience: ${OIDC_AUDIENCE:fresveg-commerce}
-    jwk-set-uri: ${OIDC_JWK_SET_URI:https://identity.example.test/.well-known/jwks.json}
+    jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8180/realms/fresveg/protocol/openid-connect/certs}

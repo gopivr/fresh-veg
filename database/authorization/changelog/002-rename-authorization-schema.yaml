@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: authorization-002-rename-schema
+      author: fresveg
+      logicalFilePath: database/authorization/changelog/002-rename-authorization-schema.yaml
+      dbms: postgresql
+      comment: Rename the existing Keycloak schema without recreating tables or identities. Quote the PostgreSQL keyword authorization.
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "1"
+            sql: SELECT count(*) FROM pg_namespace WHERE nspname = 'authorization_server'
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT count(*) FROM pg_namespace WHERE nspname = 'authorization'
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              ALTER SCHEMA authorization_server RENAME TO "authorization";
+              ALTER ROLE fresveg_authorization SET search_path = "authorization";

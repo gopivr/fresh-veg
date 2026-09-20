@@ -23,3 +23,11 @@ databaseChangeLog:
       file: ../fulfillment/db.changelog-fulfillment-master.yaml
       relativeToChangelogFile: true
       contextFilter: "@bootstrap"
+  - include:
+      file: ../authorization/changelog/001-create-authorization-schema.yaml
+      relativeToChangelogFile: true
+      contextFilter: "@bootstrap"
+  - include:
+      file: ../authorization/changelog/002-rename-authorization-schema.yaml
+      relativeToChangelogFile: true
+      contextFilter: "@bootstrap"

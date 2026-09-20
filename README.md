@@ -13,6 +13,7 @@ FresVeg is a modular Spring Boot platform for fresh grocery commerce. It contain
 | `commerce-service` | Carts, checkout preview, durable orders, idempotency, payments and outbox | 8084 |
 | `fulfillment-service` | Delivery slots, fulfillment creation, shipments, tracking and assignments | 8085 |
 | `platform-common` | Shared HTTP, correlation, error and test/database support | library |
+| `authorization-server` | Local Keycloak login, registration and OAuth2/OIDC token issuance | 8180 |
 
 ## Build and test
 
@@ -45,6 +46,10 @@ CONFIRM_RESET_LOCAL_DB=YES ./scripts/reset-local-db.sh
 ```
 
 Set `ENABLE_KAFKA=true` when you want the optional Kafka broker profile. The default compose stack runs the outbox publisher in no-op mode.
+
+Follow the [local authentication instructions](docs/operations/local-authentication.md)
+to create a user and obtain an API token with a username and password through
+Postman or curl. Local token requests do not require a browser.
 
 ## Contracts and docs
 

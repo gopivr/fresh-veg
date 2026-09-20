@@ -3,8 +3,8 @@ name: fresveg
 x-service-env: &service-env
   SPRING_PROFILES_ACTIVE: local
   SERVER_ADDRESS: 0.0.0.0
-  OIDC_ISSUER_URI: ${OIDC_ISSUER_URI:-https://identity.example.test}
-  OIDC_JWK_SET_URI: ${OIDC_JWK_SET_URI:-https://identity.example.test/.well-known/jwks.json}
+  OIDC_ISSUER_URI: ${OIDC_ISSUER_URI:-http://localhost:8180/realms/fresveg}
+  OIDC_JWK_SET_URI: ${OIDC_JWK_SET_URI:-http://authorization-server:8080/realms/fresveg/protocol/openid-connect/certs}
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,metrics,prometheus
   MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
 
@@ -15,6 +15,33 @@ x-healthcheck: &http-healthcheck
   start_period: 30s
 
 services:
+  authorization-server:
+    image: quay.io/keycloak/keycloak:26.7.4
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_HOSTNAME: http://localhost:8180
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-local-admin-change-me}
+      KC_HEALTH_ENABLED: "true"
+      KC_DB: postgres
+      # JDBC selects the schema without Hibernate emitting an unquoted SQL keyword.
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-fresveg}?currentSchema=authorization
+      KC_DB_USERNAME: fresveg_authorization
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-authorization_password}
+    ports:
+      - "127.0.0.1:8180:8080"
+    volumes:
+      - ./infrastructure/keycloak/fresveg-realm.json:/opt/keycloak/data/import/fresveg-realm.json:ro
+    depends_on:
+      database-local-passwords:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "bash", "-ec", "exec 3<>/dev/tcp/127.0.0.1/9000; printf 'GET /health/ready HTTP/1.0\r\n\r\n' >&3; grep -q '200 OK' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:17.11-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73}
     environment:
@@ -96,12 +123,15 @@ services:
       COMMERCE_MIGRATION_DB_PASSWORD: ${COMMERCE_MIGRATION_DB_PASSWORD:-commerce_migration_password}
       FULFILLMENT_DB_PASSWORD: ${FULFILLMENT_DB_PASSWORD:-fulfillment_password}
       FULFILLMENT_MIGRATION_DB_PASSWORD: ${FULFILLMENT_MIGRATION_DB_PASSWORD:-fulfillment_migration_password}
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-authorization_password}
     command:
       - sh
       - -c
       - |
         set -eu
-        psql -h postgres -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" <<SQL
+        psql -v ON_ERROR_STOP=1 -h postgres -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" <<SQL
+        \getenv keycloak_password KEYCLOAK_DB_PASSWORD
+        ALTER ROLE fresveg_authorization PASSWORD :'keycloak_password';
         ALTER ROLE fresveg_account PASSWORD '$$ACCOUNT_DB_PASSWORD';
         ALTER ROLE fresveg_account_migrator PASSWORD '$$ACCOUNT_MIGRATION_DB_PASSWORD';
         ALTER ROLE fresveg_catalog PASSWORD '$$CATALOG_DB_PASSWORD';

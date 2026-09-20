@@ -19,3 +19,9 @@ databaseChangeLog:
             path: unified/02-all-service-tables.sql
             relativeToChangelogFile: true
             splitStatements: false
+  - include:
+      file: authorization/changelog/001-create-authorization-schema.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: authorization/changelog/002-rename-authorization-schema.yaml
+      relativeToChangelogFile: true

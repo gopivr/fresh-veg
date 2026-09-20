@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - changeSet:
+      id: authorization-001-create-schema
+      author: fresveg
+      logicalFilePath: database/authorization/changelog/001-create-authorization-schema.yaml
+      dbms: postgresql
+      comment: Isolate Keycloak in the shared database. Keycloak owns and migrates its tables on startup.
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT count(*) FROM pg_roles WHERE rolname = 'fresveg_authorization'
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT count(*) FROM pg_namespace WHERE nspname = 'authorization_server'
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE ROLE fresveg_authorization LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+              CREATE SCHEMA authorization_server AUTHORIZATION fresveg_authorization;
+              REVOKE ALL ON SCHEMA authorization_server FROM PUBLIC;
+              ALTER ROLE fresveg_authorization SET search_path = authorization_server;
+              ALTER DEFAULT PRIVILEGES FOR ROLE fresveg_authorization IN SCHEMA authorization_server REVOKE ALL ON TABLES FROM PUBLIC;
+              ALTER DEFAULT PRIVILEGES FOR ROLE fresveg_authorization IN SCHEMA authorization_server REVOKE ALL ON SEQUENCES FROM PUBLIC;
+              ALTER DEFAULT PRIVILEGES FOR ROLE fresveg_authorization IN SCHEMA authorization_server REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
+              DO $bootstrap$
+              BEGIN
+                EXECUTE format('GRANT CONNECT ON DATABASE %I TO fresveg_authorization', current_database());
+              END
+              $bootstrap$;
