@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "AccountApplication (local Docker)",
+      "request": "launch",
+      "mainClass": "com.fresveg.account.AccountApplication",
+      "projectName": "account-service",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "SPRING_PROFILES_ACTIVE": "local",
+        "POSTGRES_PORT": "55432",
+        "DB_URL": "jdbc:postgresql://localhost:55432/fresveg",
+        "DB_USER": "fresveg_account",
+        "DB_PASSWORD": "account_password",
+        "MIGRATION_DB_USER": "fresveg_account_migrator",
+        "MIGRATION_DB_PASSWORD": "account_migration_password",
+        "OIDC_ISSUER_URI": "http://localhost:8180/realms/fresveg",
+        "OIDC_AUDIENCE": "fresveg-account",
+        "OIDC_JWK_SET_URI": "http://localhost:8180/realms/fresveg/protocol/openid-connect/certs"
+      }
+    }
+  ]
+}
