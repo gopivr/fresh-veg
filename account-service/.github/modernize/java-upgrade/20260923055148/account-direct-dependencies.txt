@@ -1,0 +1,14 @@
+The following files have been resolved:
+   com.fresveg:platform-common:jar:0.1.0-SNAPSHOT:compile -- module platform.common (auto)
+   org.springframework.boot:spring-boot-starter-webmvc:jar:4.0.8:compile -- module spring.boot.starter.webmvc [auto]
+   org.springframework.boot:spring-boot-starter-actuator:jar:4.0.8:compile -- module spring.boot.starter.actuator [auto]
+   io.micrometer:micrometer-registry-prometheus:jar:1.16.7:compile -- module micrometer.registry.prometheus [auto]
+   io.micrometer:micrometer-tracing-bridge-otel:jar:1.6.7:compile -- module micrometer.tracing.bridge.otel [auto]
+   io.opentelemetry:opentelemetry-exporter-otlp:jar:1.55.0:compile -- module io.opentelemetry.exporter.otlp [auto]
+   org.springframework.boot:spring-boot-starter-security-oauth2-resource-server:jar:4.0.8:compile -- module spring.boot.starter.security.oauth2.resource.server [auto]
+   org.springframework.boot:spring-boot-starter-validation:jar:4.0.8:compile -- module spring.boot.starter.validation [auto]
+   org.springframework.boot:spring-boot-starter-data-jpa:jar:4.0.8:compile -- module spring.boot.starter.data.jpa [auto]
+   org.springframework.boot:spring-boot-starter-liquibase:jar:4.0.8:compile -- module spring.boot.starter.liquibase [auto]
+   org.postgresql:postgresql:jar:42.7.13:runtime -- module org.postgresql.jdbc [auto]
+   org.springdoc:springdoc-openapi-starter-webmvc-api:jar:3.0.3:compile -- module org.springdoc.openapi.webmvc.core [auto]
+

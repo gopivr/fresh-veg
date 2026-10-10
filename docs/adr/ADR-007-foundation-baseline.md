@@ -10,7 +10,7 @@ Phase 0 proposed Java 21 and deferred dependency selection. The host has JDK 25.
 
 ## Decision
 
-Compile for Java 21, with Maven 3.9.x and JDK 21–25 accepted by the build. Use Spring Boot 4.0.8 and Spring Cloud 2025.1.3 BOMs, and retain Boot-managed Jackson 3 and JUnit Jupiter 6.0.3/Mockito instead of overriding their test platform to JUnit 5. This is a compatibility adjustment to the preferred tooling, not a service-boundary change. Validate the complete build on host JDK 25 and executable JARs on Java 21.
+Compile for Java 25, with Maven 3.9.x and JDK 25 accepted by the build. Use Spring Boot 4.0.8 and Spring Cloud 2025.1.3 BOMs, and retain Boot-managed Jackson 3 and JUnit Jupiter 6.0.3/Mockito instead of overriding their test platform to JUnit 5. This is a compatibility adjustment to the preferred tooling, not a service-boundary change. Validate the complete build and executable JARs on host JDK 25.
 
 Use WebFlux Gateway and MVC domain services. Common has generic correlation and Problem Details helpers; its Spring servlet dependencies are optional and are not pulled into the gateway. Application security allows only health probes until business security is implemented. JPA, PostgreSQL, Liquibase and Testcontainers versions remain BOM-managed; add their runtime/test dependencies when used in Phase 2. SpringDoc 3.0.3 is centrally managed for future MVC contract generation; Phase 1 maintains one static Actuator OpenAPI contract.
 
@@ -32,4 +32,4 @@ Future persistence and contract work must use Boot 4 starter/module names and Ja
 
 ## Validation
 
-`mvn clean verify` compiles all seven modules and runs unit/integration tests. The packaged-service script verifies default/local startup on Java 21; the infrastructure script verifies the isolated PostgreSQL/Redis Compose stack. See [phase summary](../PREVIOUS_PHASE_SUMMARY.md) for results.
+`mvn clean verify` compiles all seven modules and runs unit/integration tests. The packaged-service script verifies default/local startup on Java 25; the infrastructure script verifies the isolated PostgreSQL/Redis Compose stack. See [phase summary](../PREVIOUS_PHASE_SUMMARY.md) for results.

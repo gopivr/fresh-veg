@@ -1,0 +1,7 @@
+The following files have been resolved:
+   org.springframework:spring-context:jar:7.0.9:compile (optional)[36m -- module spring.context[0;1m [auto][m
+   org.springframework.boot:spring-boot-autoconfigure:jar:4.0.8:compile (optional)[36m -- module spring.boot.autoconfigure[0;1m [auto][m
+   org.springframework:spring-web:jar:7.0.9:compile (optional)[36m -- module spring.web[0;1m [auto][m
+   jakarta.servlet:jakarta.servlet-api:jar:6.1.0:compile (optional)[36m -- module jakarta.servlet[m
+   org.slf4j:slf4j-api:jar:2.0.18:compile[36m -- module org.slf4j[m
+

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate Java 21 applications against an isolated, Liquibase-bootstrapped PostgreSQL database."""
+"""Validate Java 25 applications against an isolated, Liquibase-bootstrapped PostgreSQL database."""
 import json
 import os
 from pathlib import Path
@@ -211,7 +211,7 @@ def check(module, profile, network, database_environment):
             if line.startswith("{"):
                 events.append(json.loads(line))
         assert any(e.get("service", {}).get("name") == module and "@timestamp" in e for e in events), "No structured service logs"
-        print(f"PASS: {module}/{profile}: Java 21 jar startup, health/probes, correlation, denial and ECS logs", flush=True)
+        print(f"PASS: {module}/{profile}: Java 25 jar startup, health/probes, correlation, denial and ECS logs", flush=True)
     except Exception:
         print(docker("logs", name), flush=True)
         raise
