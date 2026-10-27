@@ -26,7 +26,7 @@ Infrastructure changes are forward-only because generic rollback cannot safely r
 
 ## Validation and references
 
-Testcontainers checks clean and repeated execution, contexts, stable histories, lock release, scoped access and rollback of the test fixture. Application integration tests exercise actual Liquibase/JPA startup. Packaged Java 21 validation also uses the Maven bootstrap profile.
+Testcontainers checks clean and repeated execution, contexts, stable histories, lock release, scoped access and rollback of the test fixture. Application integration tests exercise actual Liquibase/JPA startup. Packaged Java 25 validation also uses the Maven bootstrap profile.
 
 - [Liquibase contexts](https://docs.liquibase.com/secure/reference-guide-5-0/changelog-attributes/what-are-contexts)
 - [Spring Boot Liquibase properties](https://docs.spring.io/spring-boot/4.0/appendix/application-properties/index.html)

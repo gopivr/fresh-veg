@@ -1,17 +1,19 @@
 package com.fresveg.testing.database;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.Test;
+
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
-import org.junit.jupiter.api.Test;
 
 class DatabaseFoundationIT {
     @Test
@@ -21,7 +23,7 @@ class DatabaseFoundationIT {
             DatabaseFixture.bootstrap(postgres);
             try (var admin = DatabaseFixture.admin(postgres)) {
                 String bootstrapHistory = history(admin, "public.fresveg_bootstrap_changelog");
-                assertThat(DatabaseFixture.scalar(admin, "SELECT count(*) FROM public.fresveg_bootstrap_changelog")).isEqualTo("6");
+                assertThat(DatabaseFixture.scalar(admin, "SELECT count(*) FROM public.fresveg_bootstrap_changelog")).isEqualTo("8");
                 assertThat(DatabaseFixture.scalar(admin, "SELECT count(*) FROM pg_roles WHERE rolname LIKE 'fresveg_%' AND rolname <> 'fresveg_bootstrap' AND (rolsuper OR rolcreatedb OR rolcreaterole OR rolbypassrls OR rolreplication)")).isEqualTo("0");
                 for (String owner : DatabaseFixture.OWNERS) {
                     try (var migration = DatabaseFixture.connect(postgres, owner, true)) {

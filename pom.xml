@@ -24,7 +24,7 @@
         <module>fulfillment-service</module>
     </modules>
     <properties>
-        <java.version>21</java.version>
+        <java.version>25</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -68,7 +68,7 @@
                         <goals><goal>enforce</goal></goals>
                         <configuration>
                             <rules>
-                                <requireJavaVersion><version>[21,27)</version></requireJavaVersion>
+                                <requireJavaVersion><version>[25,27)</version></requireJavaVersion>
                                 <requireMavenVersion><version>[3.9.0,4)</version></requireMavenVersion>
                             </rules>
                         </configuration>
@@ -101,7 +101,6 @@
                     <plugin>
                         <groupId>org.liquibase</groupId>
                         <artifactId>liquibase-maven-plugin</artifactId>
-                        <version>${liquibase.version}</version>
                         <inherited>false</inherited>
                         <configuration>
                             <changeLogFile>database/master/db.changelog-master.yaml</changeLogFile>
@@ -132,7 +131,6 @@
                     <plugin>
                         <groupId>org.liquibase</groupId>
                         <artifactId>liquibase-maven-plugin</artifactId>
-                        <version>${liquibase.version}</version>
                         <inherited>false</inherited>
                         <configuration>
                             <changeLogFile>database/db.changelog-unified.yaml</changeLogFile>

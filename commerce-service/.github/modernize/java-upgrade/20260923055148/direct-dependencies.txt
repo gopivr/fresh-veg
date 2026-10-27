@@ -1,0 +1,14 @@
+The following files have been resolved:
+   com.fresveg:platform-common:jar:0.1.0-SNAPSHOT:compile[36m -- module platform.common[0;1;33m (auto)[m
+   org.springframework.boot:spring-boot-starter-webmvc:jar:4.0.8:compile[36m -- module spring.boot.starter.webmvc[0;1m [auto][m
+   org.springframework.boot:spring-boot-starter-actuator:jar:4.0.8:compile[36m -- module spring.boot.starter.actuator[0;1m [auto][m
+   io.micrometer:micrometer-registry-prometheus:jar:1.16.7:compile[36m -- module micrometer.registry.prometheus[0;1m [auto][m
+   io.micrometer:micrometer-tracing-bridge-otel:jar:1.6.7:compile[36m -- module micrometer.tracing.bridge.otel[0;1m [auto][m
+   io.opentelemetry:opentelemetry-exporter-otlp:jar:1.55.0:compile[36m -- module io.opentelemetry.exporter.otlp[0;1m [auto][m
+   org.springframework.boot:spring-boot-starter-security-oauth2-resource-server:jar:4.0.8:compile[36m -- module spring.boot.starter.security.oauth2.resource.server[0;1m [auto][m
+   org.springframework.boot:spring-boot-starter-validation:jar:4.0.8:compile[36m -- module spring.boot.starter.validation[0;1m [auto][m
+   org.springframework.boot:spring-boot-starter-data-jpa:jar:4.0.8:compile[36m -- module spring.boot.starter.data.jpa[0;1m [auto][m
+   org.springframework.boot:spring-boot-starter-liquibase:jar:4.0.8:compile[36m -- module spring.boot.starter.liquibase[0;1m [auto][m
+   org.springdoc:springdoc-openapi-starter-webmvc-api:jar:3.0.3:compile[36m -- module org.springdoc.openapi.webmvc.core[0;1m [auto][m
+   org.springframework.kafka:spring-kafka:jar:4.0.7:compile[36m -- module spring.kafka[0;1m [auto][m
+
